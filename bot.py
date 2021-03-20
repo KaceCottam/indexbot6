@@ -16,42 +16,47 @@ def prefixed(message):
     return message.content.startswith(PREFIX)
 
 def messageify(id):
+    """Creates a mention via text using an id"""
     return f"<@{id}>"
 
 @client.listen("on_connect")
 async def onConnect():
     for guild in client.guilds:
         api.ensureTableExists(cur, guild.id)
-    con.commit()
+    con.commit() # save db
+
     print(f"Connected as {client.user.name}#{client.user.discriminator} ({client.user.id})!")
+    await client.change_presence(activity = discord.Game(f"{PREFIX}help"))
 
 @client.listen("on_message")
 async def onMessage(message: discord.Message):
-    if prefixed(message):
-        return
+    """pings every user subscribed to a notification list if a mention is present in a message"""
+    if prefixed(message): return # ignore bot commands for this
+
     allRoles = api.listRoles(cur, message.guild.id)
     gameRoles = [ role.id for role in message.role_mentions if role.id in allRoles ]
+
     def mentionAllUsers(roleId):
         userRoles = api.listUsers(cur, message.guild.id, roleId)
         return ' '.join(map(messageify, userRoles))
+
     if gameRoles:
         await message.channel.send(' '.join(map(mentionAllUsers, gameRoles)))
 
-@client.check
+@client.check_once
 async def notBot(ctx):
+    """disable replying to bots"""
     return ctx.author.bot == False
 
-@client.check
-async def inGuild(ctx):
-    return ctx.guild != None
+client.add_check(commands.guild_only, call_once=True)
 
 @client.command()
-async def games(ctx: commands.Context,
+async def roles(ctx: commands.Context,
                 user: Optional[discord.User]):
-    """Displays a list of all games (either of a user, or of a whole server)"""
-    allGames = api.listRoles(cur, ctx.guild.id, user.id if user else None)
-    gamesString = '\n'.join(map(messageify, allGames))
-    await ctx.reply(gamesString if len(allGames) > 0 else "There are no registered games on this server.")
+    """Displays a list of all roles (either of a user, or of a whole server)"""
+    allRoles = api.listRoles(cur, ctx.guild.id, user.id if user else None)
+    rolesString = '\n'.join(map(messageify, allRoles))
+    await ctx.reply(rolesString if len(allRoles) > 0 else "There are no registered roles on this server.")
 
 @client.command()
 async def unnotify(ctx: commands.Context,
@@ -60,7 +65,8 @@ async def unnotify(ctx: commands.Context,
     if not roles:
         await ctx.send_help(unnotify)
         return
-    errorRoles = list()
+
+    errorRoles   = list()
     noErrorRoles = list()
     deletedRoles = list()
 
@@ -70,12 +76,15 @@ async def unnotify(ctx: commands.Context,
             errorRoles.append(role.name)
         elif type(error) == int:
             if not role.members:
+                """check to see if this role has active members before deleting it"""
                 await role.delete(reason="No more notification subscriptions.")
+                print(f"Deleting role {role.name!r} ({role.id}) in guild {ctx.guild.id}.")
                 deletedRoles.append(role.name)
             noErrorRoles.append(role.name)
         else:
             noErrorRoles.append(role.name)
 
+    # i do stuff like this in order to group all of my output together.
     if errorRoles:
         errorString = ', '.join(map(repr, errorRoles))
         await ctx.reply(f"Not recieving notifications for: {errorString}!")
@@ -97,7 +106,7 @@ async def notify(ctx: commands.Context,
         await ctx.send_help(notify)
         return
 
-    errorRoles = list()
+    errorRoles   = list()
     noErrorRoles = list()
 
     # handle existing roles

@@ -1,6 +1,8 @@
 import sqlite3
 from typing import Optional
 
+# given that this only works with message ids, it would be difficult to use this database unsafely.
+
 def makeApi(path, timeout: int = 1000):
     con = sqlite3.connect(path, timeout=timeout)
     cur = con.cursor()
