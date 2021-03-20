@@ -21,6 +21,9 @@ def listUsers(cursor: sqlite3.Cursor, guildid: int, roleid: int):
 
 def removeUserFromRole(cursor: sqlite3.Cursor, guildid: int, roleid: int, userid: int) :
     try:
+        cursor.execute(fr"SELECT COUNT(*) FROM GUILD_{guildid} WHERE roleid={roleid}")
+        if (int(cursor.fetchone()[0]) == 0):
+            return "That role doesn't exist!"
         cursor.execute(fr"DELETE FROM guild_{guildid} WHERE roleid={roleid} AND userid={userid}")
         cursor.execute(fr"SELECT COUNT(*) FROM guild_{guildid} WHERE roleid={roleid}")
         if (int(cursor.fetchone()[0]) == 0):

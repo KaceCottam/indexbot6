@@ -34,7 +34,7 @@ async def onMessage(message: discord.Message):
     def mentionAllUsers(roleId):
         userRoles = api.listUsers(cur, message.guild.id, roleId)
         return ' '.join(map(messageify, userRoles))
-    if len(gameRoles) > 0:
+    if gameRoles:
         await message.channel.send(' '.join(map(mentionAllUsers, gameRoles)))
 
 @client.check
@@ -57,32 +57,36 @@ async def games(ctx: commands.Context,
 async def unnotify(ctx: commands.Context,
                    roles: commands.Greedy[discord.Role]):
     """Removes the user from a notification list for a game"""
-    if len(roles) == 0:
+    if not roles:
         await ctx.send_help(unnotify)
         return
-    errorRoles = []
-    noErrorRoles = []
-    deletedRoles = []
+    errorRoles = list()
+    noErrorRoles = list()
+    deletedRoles = list()
+
     for role in roles:
         error = api.removeUserFromRole(cur, ctx.guild.id, role.id, ctx.author.id)
         if type(error) == str:
             errorRoles.append(role.name)
         elif type(error) == int:
-            await role.delete(reason="No more notification subscriptions.")
+            if not role.members:
+                await role.delete(reason="No more notification subscriptions.")
+                deletedRoles.append(role.name)
             noErrorRoles.append(role.name)
-            deletedRoles.append(role.name)
         else:
             noErrorRoles.append(role.name)
+
     if errorRoles:
         errorString = ', '.join(map(repr, errorRoles))
-        await ctx.reply(f"Not being notified in: {errorString}!")
+        await ctx.reply(f"Not recieving notifications for: {errorString}!")
     if noErrorRoles:
         noErrorString = ', '.join(map(repr, noErrorRoles))
         await ctx.reply(f"Unsubscribed from notifications for: {noErrorString}!")
     if deletedRoles:
         deletedString = ', '.join(map(repr, deletedRoles))
         await ctx.send(f"Deleted roles: {deletedString}")
-    con.commit()
+
+    con.commit() # save changes
 
 @client.command()
 async def notify(ctx: commands.Context,
@@ -93,20 +97,25 @@ async def notify(ctx: commands.Context,
         await ctx.send_help(notify)
         return
 
-    errorRoles = []
-    noErrorRoles = []
+    errorRoles = list()
+    noErrorRoles = list()
+
+    # handle existing roles
     for role in roles:
         error = api.addRole(cur, ctx.guild.id, role.id, ctx.author.id)
         if error:
             errorRoles.append(role.name)
         else:
             noErrorRoles.append(role.name)
+    
+    # handle non-existing role
+    # we are using a dictionary for easy lookup and detection
     roleDict = {r.name: r.id for r in ctx.guild.roles}
-    if gameName:
-        if gameName not in roleDict:
+    if gameName: 
+        if gameName not in roleDict: # must create role
             newRole = await ctx.guild.create_role(name=gameName, mentionable=True)
             roleDict[newRole.name] = newRole.id
-            await ctx.send(f"New role \"{newRole.name}\" created!")
+            await ctx.send(f"New role \"{newRole.name}\" created!") # TODO i tried to make this ping the new role, but it was not working
             print(f"New role \"{newRole.name}\" ({newRole.id}) created in guild {ctx.guild.id}!")
 
         error = api.addRole(cur, ctx.guild.id, roleDict[gameName], ctx.author.id)
@@ -114,13 +123,15 @@ async def notify(ctx: commands.Context,
             errorRoles.append(gameName)
         else:
             noErrorRoles.append(gameName)
-    if errorRoles:
-        errorString = ', '.join(map(repr, errorRoles))
+    
+    if errorRoles: # only reply if there were errors
+        errorString = ', '.join(map(repr, errorRoles)) # concatenate to single comma separated string
         await ctx.reply(f"Already in {errorString}!")
-    if noErrorRoles:
-        noErrorString = ', '.join(map(repr, noErrorRoles))
+    if noErrorRoles: # only reply if there were successes
+        noErrorString = ', '.join(map(repr, noErrorRoles)) # concatenate to single comma separated string
         await ctx.reply(f"Added {ctx.author.name} to: {noErrorString}!")
-    con.commit()
+
+    con.commit() # save changes
 
 if __name__ == '__main__':
     client.run(TOKEN)
