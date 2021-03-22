@@ -1,3 +1,5 @@
+from os import pipe
+from sys import stderr
 from typing import Optional
 
 from settings import ROLES_DB, TOKEN, PREFIX
@@ -122,6 +124,7 @@ async def notify(ctx: commands.Context,
     # we are using a dictionary for easy lookup and detection
     roleDict = {r.name: r.id for r in ctx.guild.roles}
     if gameName: 
+        gameName = gameName.lower()
         if gameName not in roleDict: # must create role
             newRole = await ctx.guild.create_role(name=gameName, mentionable=True)
             roleDict[newRole.name] = newRole.id
@@ -142,6 +145,38 @@ async def notify(ctx: commands.Context,
         await ctx.reply(f"Added {ctx.author.name} to: {noErrorString}!")
 
     con.commit() # save changes
+
+NEED_MIGRATION=True
+if NEED_MIGRATION:
+    import os
+    
+    @client.command(hidden=True)
+    async def migrate(ctx):
+        roles = { x.name.lower(): x.id for x in ctx.guild.roles }
+        rolesAdded = 0
+        fileNames = []
+        try:
+            fileNames = filter(lambda f: f.lower() in roles.keys(), os.listdir('./Roles'))
+        except FileNotFoundError:
+            print("Roles folder not found.")
+        for filename in fileNames:
+            rolesAdded += 1
+            usersAdded = 0
+            with open(filename, 'r') as infile:
+                userids = infile.readlines()
+                for userid in userids:
+                    try:
+                        error = api.addRole(cur, ctx.guild.id, roles[filename], int(userid))
+                        if error:
+                            print(f"Error adding user {userid} to role {roles[filename]}.", file=stderr)
+                        else:
+                            usersAdded += 1
+                    except ValueError:
+                        print(f"Error, bad userid {userid}")
+            print(f"Added {usersAdded} users to role {roles[filename]}")
+        print(f"Added {rolesAdded} roles.")
+        con.commit()
+        await ctx.reply(f"Migrated {rolesAdded} roles. Please test it now!")
 
 if __name__ == '__main__':
     client.run(TOKEN)
