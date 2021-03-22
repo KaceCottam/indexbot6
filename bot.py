@@ -1,6 +1,5 @@
-from typing import List, Optional
+from typing import Optional
 
-from discord.ext.commands.converter import GameConverter
 from settings import ROLES_DB, TOKEN, PREFIX
 import api
 
@@ -48,7 +47,9 @@ async def notBot(ctx):
     """disable replying to bots"""
     return ctx.author.bot == False
 
-client.add_check(commands.guild_only, call_once=True)
+@client.check_once
+async def inGuild(ctx):
+    return ctx.guild != None
 
 @client.command()
 async def roles(ctx: commands.Context,
@@ -56,7 +57,7 @@ async def roles(ctx: commands.Context,
     """Displays a list of all roles (either of a user, or of a whole server)"""
     allRoles = api.listRoles(cur, ctx.guild.id, user.id if user else None)
     rolesString = '\n'.join(map(messageify, allRoles))
-    await ctx.reply(rolesString if len(allRoles) > 0 else "There are no registered roles on this server.")
+    await ctx.reply(rolesString if allRoles else "There are no registered roles on this server.")
 
 @client.command()
 async def unnotify(ctx: commands.Context,
