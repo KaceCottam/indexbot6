@@ -4,6 +4,7 @@ from typing import Optional
 
 from settings import ROLES_DB, TOKEN, PREFIX
 import api
+from functools import reduce
 
 import discord
 from discord.ext import commands
@@ -145,6 +146,25 @@ async def notify(ctx: commands.Context,
         await ctx.reply(f"Added {ctx.author.name} to: {noErrorString}!")
 
     con.commit() # save changes
+
+@client.command()
+async def merge(ctx: commands.Context, roles: commands.Greedy[discord.Role], *, newRoleName: Optional[str]):
+    """Merges two roles to the name of the last role given, or the string role name given at the end."""
+    if not roles or len(roles) < 2:
+        await ctx.send_help(merge)
+        return
+    lastRole = roles[-1].name
+    newUsers = reduce(lambda userList, role: userList + api.listUsers(cur, ctx.guild.id, role.id), roles, list())
+    deletedRoles = 0
+    for role in roles:
+        deletedRoles += 1
+        await role.delete(reason="Merging roles")
+        api.removeRole(cur, ctx.guild.id, role.id)
+    distinctUsers = list(set(newUsers))
+    newRole = await ctx.guild.create_role(name=newRoleName if newRoleName else lastRole, mentionable=True)
+    for user in distinctUsers:
+        api.addRole(cur, ctx.guild.id, newRole.id, user)
+    await ctx.reply(f"Merged {deletedRoles} into 1 role {messageify(newRole.id)}!")
 
 NEED_MIGRATION=True
 if NEED_MIGRATION:
