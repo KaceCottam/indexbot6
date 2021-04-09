@@ -2,6 +2,8 @@ from os import pipe
 from sys import stderr
 from typing import Optional
 
+from discord.ext.commands.errors import CommandInvokeError
+
 from settings import ROLES_DB, TOKEN, PREFIX
 import api
 from functools import reduce
@@ -12,14 +14,30 @@ from discord.ext import commands
 # TODO reformat into class :/
 
 client = commands.Bot(command_prefix=PREFIX)
+client.add_check(commands.guild_only())
 con, cur = api.makeApi(ROLES_DB)
 
 def prefixed(message):
     return message.content.startswith(PREFIX)
 
-def messageify(id):
-    """Creates a mention via text using an id"""
-    return f"<@{id}>"
+def isBot(message):
+    return message.author.bot
+
+def messageifyUser(guild: discord.Guild):
+    """
+    Creates a mention via text using an id
+    Curried.
+    """
+    async def f(id):
+        return (member := await guild.fetch_member(id)) and member.mention or 'ERROR USER'
+    return f  #f"<@{id}>"
+
+def messageifyRole(guild: discord.Guild):
+    """
+    Creates a mention via text using an id.
+    Curried.
+    """
+    return lambda id: (role := guild.get_role(id)) and role.mention or 'ERROR ROLE' # f"<@{id}>"
 
 @client.listen("on_connect")
 async def onConnect():
@@ -33,33 +51,29 @@ async def onConnect():
 @client.listen("on_message")
 async def onMessage(message: discord.Message):
     """pings every user subscribed to a notification list if a mention is present in a message"""
-    if prefixed(message): return # ignore bot commands for this
+    if prefixed(message) or isBot(message): return # ignore bot commands for this
 
     allRoles = api.listRoles(cur, message.guild.id)
     gameRoles = [ role.id for role in message.role_mentions if role.id in allRoles ]
-
-    def mentionAllUsers(roleId):
+    async def mentionAllUsers(roleId):
         userRoles = api.listUsers(cur, message.guild.id, roleId)
-        return ' '.join(map(messageify, userRoles))
+        string = ''
+        for u in userRoles:
+            string += await messageifyUser(message.guild)(u) + ' '
+        return string.strip()
 
     if gameRoles:
-        await message.channel.send(' '.join(map(mentionAllUsers, gameRoles)))
-
-@client.check_once
-async def notBot(ctx):
-    """disable replying to bots"""
-    return ctx.author.bot == False
-
-@client.check_once
-async def inGuild(ctx):
-    return ctx.guild != None
+        string = ''
+        for r in gameRoles:
+            string += await mentionAllUsers(r) + ' '
+        await message.channel.send(string.strip())
 
 @client.command()
 async def roles(ctx: commands.Context,
                 user: Optional[discord.User]):
     """Displays a list of all roles (either of a user, or of a whole server)"""
     allRoles = api.listRoles(cur, ctx.guild.id, user.id if user else None)
-    rolesString = '\n'.join(map(messageify, allRoles))
+    rolesString = '\n'.join(map(messageifyRole(ctx.guild), allRoles))
     await ctx.reply(rolesString if allRoles else "There are no registered roles on this server.")
 
 @client.command()
@@ -81,9 +95,9 @@ async def unnotify(ctx: commands.Context,
         elif type(error) == int:
             if not role.members:
                 """check to see if this role has active members before deleting it"""
-                await role.delete(reason="No more notification subscriptions.")
                 print(f"Deleting role {role.name!r} ({role.id}) in guild {ctx.guild.id}.")
                 deletedRoles.append(role.name)
+                await role.delete(reason="No more notification subscriptions.")
             noErrorRoles.append(role.name)
         else:
             noErrorRoles.append(role.name)
@@ -117,9 +131,9 @@ async def notify(ctx: commands.Context,
     for role in roles:
         error = api.addRole(cur, ctx.guild.id, role.id, ctx.author.id)
         if error:
-            errorRoles.append(role.name)
+            errorRoles.append(role.mention)
         else:
-            noErrorRoles.append(role.name)
+            noErrorRoles.append(role.mention)
     
     # handle non-existing role
     # we are using a dictionary for easy lookup and detection
@@ -129,7 +143,7 @@ async def notify(ctx: commands.Context,
         if gameName not in roleDict: # must create role
             newRole = await ctx.guild.create_role(name=gameName, mentionable=True)
             roleDict[newRole.name] = newRole.id
-            await ctx.send(f"New role \"{newRole.name}\" created!") # TODO i tried to make this ping the new role, but it was not working
+            await ctx.send(f"New role {newRole.mention} created!") # TODO i tried to make this ping the new role, but it was not working
             print(f"New role \"{newRole.name}\" ({newRole.id}) created in guild {ctx.guild.id}!")
 
         error = api.addRole(cur, ctx.guild.id, roleDict[gameName], ctx.author.id)
@@ -158,13 +172,17 @@ async def merge(ctx: commands.Context, roles: commands.Greedy[discord.Role], *, 
     deletedRoles = 0
     for role in roles:
         deletedRoles += 1
-        await role.delete(reason="Merging roles")
         api.removeRole(cur, ctx.guild.id, role.id)
+        try:
+            await role.delete(reason="Merging roles")
+        except CommandInvokeError:
+            pass
     distinctUsers = list(set(newUsers))
     newRole = await ctx.guild.create_role(name=newRoleName if newRoleName else lastRole, mentionable=True)
     for user in distinctUsers:
         api.addRole(cur, ctx.guild.id, newRole.id, user)
-    await ctx.reply(f"Merged {deletedRoles} into 1 role {messageify(newRole.id)}!")
+    await ctx.reply(f"Merged {deletedRoles} roles into 1 role {newRole.mention}!")
+    con.commit()
 
 NEED_MIGRATION=True
 if NEED_MIGRATION:
