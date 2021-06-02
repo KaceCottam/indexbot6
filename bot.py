@@ -29,7 +29,10 @@ def messageifyUser(guild: discord.Guild):
     Curried.
     """
     async def f(id):
-        return (member := await guild.fetch_member(id)) and member.mention or 'ERROR USER'
+        try:
+            return (member := await guild.fetch_member(id)) and member.mention or 'ERROR USER'
+        except:
+            return f"<@{id}>"
     return f  #f"<@{id}>"
 
 def messageifyRole(guild: discord.Guild):
@@ -134,11 +137,11 @@ async def notify(ctx: commands.Context,
             errorRoles.append(role.mention)
         else:
             noErrorRoles.append(role.mention)
-    
+
     # handle non-existing role
     # we are using a dictionary for easy lookup and detection
     roleDict = {r.name: r.id for r in ctx.guild.roles}
-    if gameName: 
+    if gameName:
         gameName = gameName.lower()
         if gameName not in roleDict: # must create role
             newRole = await ctx.guild.create_role(name=gameName, mentionable=True)
@@ -151,7 +154,7 @@ async def notify(ctx: commands.Context,
             errorRoles.append(gameName)
         else:
             noErrorRoles.append(gameName)
-    
+
     if errorRoles: # only reply if there were errors
         errorString = ', '.join(map(repr, errorRoles)) # concatenate to single comma separated string
         await ctx.reply(f"Already in {errorString}!")
@@ -187,31 +190,33 @@ async def merge(ctx: commands.Context, roles: commands.Greedy[discord.Role], *, 
 NEED_MIGRATION=True
 if NEED_MIGRATION:
     import os
-    
+
     @client.command(hidden=True)
     async def migrate(ctx):
         roles = { x.name.lower(): x.id for x in ctx.guild.roles }
         rolesAdded = 0
         fileNames = []
         try:
-            fileNames = filter(lambda f: f.lower() in roles.keys(), os.listdir('./Roles'))
+            fileNames = [ f for f in os.listdir('./Roles') if f.lower()[:-4] in roles.keys() ]
         except FileNotFoundError:
             print("Roles folder not found.")
+        print(roles.keys())
+        print(fileNames)
         for filename in fileNames:
             rolesAdded += 1
             usersAdded = 0
-            with open(filename, 'r') as infile:
+            with open('./Roles/' + filename, 'r') as infile:
                 userids = infile.readlines()
                 for userid in userids:
                     try:
-                        error = api.addRole(cur, ctx.guild.id, roles[filename], int(userid))
+                        error = api.addRole(cur, ctx.guild.id, roles[filename.lower()[:-4]], int(userid))
                         if error:
-                            print(f"Error adding user {userid} to role {roles[filename]}.", file=stderr)
+                            print(f"Error adding user {userid} to role {roles[filename.lower()[:-4]]}.", file=stderr)
                         else:
                             usersAdded += 1
                     except ValueError:
                         print(f"Error, bad userid {userid}")
-            print(f"Added {usersAdded} users to role {roles[filename]}")
+            print(f"Added {usersAdded} users to role {roles[filename.lower()[:-4]]}")
         print(f"Added {rolesAdded} roles.")
         con.commit()
         await ctx.reply(f"Migrated {rolesAdded} roles. Please test it now!")
