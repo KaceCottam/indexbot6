@@ -72,19 +72,27 @@ async def onMessage(message: discord.Message):
         await message.channel.send(string.strip())
 
 @client.command()
-async def roles(ctx: commands.Context,
+async def mygames(ctx: commands.Context,
                 user: Optional[discord.User]):
     """Displays a list of all roles (either of a user, or of a whole server)"""
-    allRoles = api.listRoles(cur, ctx.guild.id, user.id if user else None)
+    allRoles = api.listRoles(cur, ctx.guild.id, user.id if user else ctx.author)
     rolesString = '\n'.join(map(messageifyRole(ctx.guild), allRoles))
     await ctx.reply(rolesString if allRoles else "There are no registered roles on this server.")
 
 @client.command()
-async def unnotify(ctx: commands.Context,
+async def roles(ctx: commands.Context,
+                user: Optional[discord.User]):
+    """Displays a list of all roles (either of a user, or of a whole server)"""
+    allRoles = api.listRoles(cur, ctx.guild.id, None)
+    rolesString = '\n'.join(map(messageifyRole(ctx.guild), allRoles))
+    await ctx.reply(rolesString if allRoles else "There are no registered roles on this server.")
+
+@client.command()
+async def remove(ctx: commands.Context,
                    roles: commands.Greedy[discord.Role]):
     """Removes the user from a notification list for a game"""
     if not roles:
-        await ctx.send_help(unnotify)
+        await ctx.send_help(remove)
         return
 
     errorRoles   = list()
@@ -119,12 +127,12 @@ async def unnotify(ctx: commands.Context,
     con.commit() # save changes
 
 @client.command()
-async def notify(ctx: commands.Context,
+async def game(ctx: commands.Context,
                  roles: commands.Greedy[discord.Role],
                  *, gameName: Optional[str]):
     """Adds the user to a notification list for a game"""
     if not roles and not gameName:
-        await ctx.send_help(notify)
+        await ctx.send_help(game)
         return
 
     errorRoles   = list()
@@ -187,7 +195,7 @@ async def merge(ctx: commands.Context, roles: commands.Greedy[discord.Role], *, 
     await ctx.reply(f"Merged {deletedRoles} roles into 1 role {newRole.mention}!")
     con.commit()
 
-NEED_MIGRATION=True
+NEED_MIGRATION=False
 if NEED_MIGRATION:
     import os
 
