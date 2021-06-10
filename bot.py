@@ -251,6 +251,14 @@ async def _removerole(ctx: SlashContext, role: discord.Role):
     await ctx.send(content=description, embed=embed)
     con.commit()
 
+@bot.listen("on_slash_command_error")
+async def _on_error(ctx, err):
+    if isinstance(err, commands.errors.MissingPermissions):
+        embed = discord.Embed(title="Error!", description="You don't have permission to do that!", color=discord.Color.red())
+        await ctx.send(embed=embed)
+        return
+    raise err
+
 @slash.slash(
     name="help",
     description="Displays help information",
