@@ -2,7 +2,7 @@ from settings import BOT_TOKEN, BOT_APPLICATION_ID, BOT_ROLES_DB, BOT_GUILD_IDS
 import discord
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
-from discord_slash.utils.manage_commands import create_option, SlashCommandOptionType
+from discord_slash.utils.manage_commands import create_option
 import api
 
 intent = discord.Intents.default()
@@ -83,11 +83,11 @@ async def _remove(ctx: SlashContext, role: discord.Role):
     rid, error = api.removeUserFromRole(cur, ctx.guild.id, role.id, ctx.author.id)
     embed = discord.Embed(title=f"Removing from game {role.name}", color=discord.Color.dark_blue())
     if error is not None:
-        embed.add_field(name=":x: Error!", value=f"Not recieving notificatiosn for {role.mention}!", inline=False)
+        embed.add_field(name=":x: Error!", value=f"Not recieving notifications for {role.mention}!", inline=False)
         embed.color = discord.Color.red()
         await ctx.send(embed=embed)
         return
-    if len(role.members) == 0:
+    if rid is not None and len(role.members) == 0:
         print(f"Removing role {role.id} from guild {ctx.guild.id}")
         await role.delete(reason="No more notification subscriptions.")
         embed.add_field(name=':broken_heart: Deleting role', value=f'Deleting role "{role.name}"', inline=False)
@@ -142,6 +142,104 @@ async def _roles(ctx: SlashContext):
         embed.color=discord.Color.red()
         print(f"Key Error when getting roles: {c!r}")
     await ctx.send(embed=embed)
+
+# Commented out until I can find out how to restrict permissions
+# @slash.slash(
+#     name="forcejoin",
+#     description="Forces a user to join a role (admin)",
+#     options=[
+#         create_option(
+#             name="user",
+#             description="Which user do you want to add?",
+#             option_type=6,
+#             required=True),
+#         create_option(
+#             name="role",
+#             description="Which game do you want them to be notified for?",
+#             option_type=8,
+#             required=True)
+#     ],
+#     guild_ids=BOT_GUILD_IDS)
+# async def _forcejoin(ctx: SlashContext, user: discord.User, role: discord.Role):
+#     embed = discord.Embed(
+#         title="Force Join",
+#         description=f"Forced {user.display_name} to be notified by {role.name}.",
+#         color=discord.Color.dark_purple())
+#     embed.set_image(url='https://media.giphy.com/media/3d78lX84bkU6T4zNOg/giphy.gif')
+#     error = api.addRole(cur, ctx.guild.id, role.id, user.id)
+#     if error:
+#         embed.color = discord.Color.red()
+#         embed.add_field(name=":x: Error!", value=f"Already in {role.mention}!", inline=False)
+#     else:
+#         embed.add_field(name=":video_game: Successfully added user to the game!", value=f"Added {user.name} to {role.mention}!", inline=False)
+#         print(f"Added user {user.id} to role {role.id} in guild {ctx.guild.id}!")
+#     await ctx.send(embed=embed)
+#     con.commit()
+#
+# @slash.slash(
+#     name="forceremove",
+#     description="Forces a user to be removed from a role (admin)",
+#     options=[
+#         create_option(
+#             name="user",
+#             description="Which user do you want to add?",
+#             option_type=6,
+#             required=True),
+#         create_option(
+#             name="role",
+#             description="Which game do you want them to be notified for?",
+#             option_type=8,
+#             required=True)
+#     ],
+#     guild_ids=BOT_GUILD_IDS)
+# async def _forceremove(ctx: SlashContext, user: discord.User, role: discord.Role):
+#     rid, error = api.removeUserFromRole(cur, ctx.guild.id, role.id, user.id)
+#     embed = discord.Embed(
+#     title="Force Join",
+#     description=f"Forced {user.display_name} to be not notified by {role.name}.",
+#     color=discord.Color.dark_purple())
+#     embed.set_image(url='https://media.giphy.com/media/xT5LMV6TnIItuFJWms/giphy.gif')
+#     if error is not None:
+#         embed.add_field(name=":x: Error!", value=f"Not recieving notificatiosn for {role.mention}!", inline=False)
+#         embed.color = discord.Color.red()
+#         await ctx.send(embed=embed)
+#         return
+#     if rid is not None and len(role.members) == 0:
+#         print(f"Removing role {role.id} from guild {ctx.guild.id}")
+#         await role.delete(reason="No more notification subscriptions.")
+#         embed.add_field(name=':broken_heart: Deleting role', value=f'Deleting role "{role.name}"', inline=False)
+#         embed.color=discord.Color.orange()
+#     print(f"Removed user {user.id} from role {role} in guild {ctx.guild.id}!")
+#     value = f"Unsubscribed from notifications for {role.mention if len(role.members) != 0 else role.name}."
+#     embed.add_field(name=":no_bell: Successfully unsubscribed from game!", value=value, inline=False)
+#     await ctx.send(embed=embed)
+#     con.commit()
+#
+# @slash.slash(
+#     name="removerole",
+#     description="Deletes a role (admin)",
+#     options=[
+#         create_option(
+#             name="role",
+#             description="Which role do you want to remove?",
+#             option_type=8,
+#             required=True)
+#     ],
+#     guild_ids=BOT_GUILD_IDS)
+# async def _removerole(ctx: SlashContext, role: discord.Role):
+#     userRoles = { user.id: user for user in await ctx.guild.fetch_members().flatten() }
+#     users = api.listUsers(cur, ctx.guild.id, role.id)
+#     api.removeRole(cur, ctx.guild.id, role.id)
+#     description = ' '.join( userRoles[user].mention for user in users )
+#     print(f"Removing role {role.id} from guild {ctx.guild.id}")
+#     embed = discord.Embed(title=f'Removing game "{role.name}!"', description=description, color=discord.Color.dark_red())
+#     embed.set_footer(text="Make sure you are aware!")
+#     if len(role.members) == 0:
+#         print(f"Deleting role {role.id} from guild {ctx.guild.id}")
+#         await role.delete(reason="No more notification subscriptions.")
+#         embed.add_field(name=':broken_heart: Deleting role', value=f'Deleting role "{role.name}"', inline=False)
+#     await ctx.send(embed=embed)
+#     con.commit()
 
 @slash.slash(
     name="help",

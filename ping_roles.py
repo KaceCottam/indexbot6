@@ -10,19 +10,19 @@ def setup(bot):
         """pings every user subscribed to a notification list if a mention is present in a message"""
         if message.author.bot is True: return # ignore bot commands for this
 
-        allRoles = api.listRoles(cur, message.guild.id)
+        allRoles = api.listAllRoles(cur, message.guild.id)
 
         gameRoles = [ role for role in message.role_mentions if role.id in allRoles ]
         if len(gameRoles) == 0: return # ignore messages without role mentions
 
         userRoles = { user.id: user for user in await message.guild.fetch_members().flatten() }
 
-        embed = discord.Embed(title="Ping!", description="> " + message.content, color=discord.Color.random())
-        embed.set_author(name=message.author, url=message.jump_url, icon_url=message.author.avatar_url)
+        embed = discord.Embed(description="> " + message.content, color=discord.Color.random())
+        embed.set_author(name=message.author.display_name, url=message.jump_url, icon_url=message.author.avatar_url)
 
         for role in gameRoles:
             users = api.listUsers(cur, message.guild.id, role.id)
-            content = ' '.join( user.mention for user in users )
-            embed.add_field(name=role.name, content=content)
+            content = ' '.join( userRoles[user].mention for user in users )
+            embed.add_field(name=role.name, value=content)
 
         await message.channel.send(embed=embed)

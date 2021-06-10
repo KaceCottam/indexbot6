@@ -1,6 +1,7 @@
 import sqlite3
 from typing import List, Optional, Union
 
+# TODO be safe with no fstrings
 # given that this only works with message ids, it would be difficult to use this database unsafely.
 
 def makeApi(path, timeout: int = 1000):
@@ -30,6 +31,7 @@ def removeUserFromRole(cursor: sqlite3.Cursor, guildid: int, roleid: int, userid
         cursor.execute(fr"SELECT COUNT(*) FROM guild_{guildid} WHERE roleid={roleid}")
         if (int(cursor.fetchone()[0]) == 0):
             return roleid, None
+        return None, None
     except sqlite3.ProgrammingError:
         return None, "That query doesn't exist!"
 
