@@ -167,7 +167,7 @@ async def _roles(ctx: SlashContext, user: discord.User = None):
             required=True)
     ],
     guild_ids=BOT_GUILD_IDS)
-@commands.has_guild_permissions(manage_roles=True)
+@commands.has_permissions(manage_roles=True)
 async def _forcejoin(ctx: SlashContext, user: discord.User, role: discord.Role):
     embed = discord.Embed(
         title="Force Join",
@@ -200,7 +200,7 @@ async def _forcejoin(ctx: SlashContext, user: discord.User, role: discord.Role):
             required=True)
     ],
     guild_ids=BOT_GUILD_IDS)
-@commands.has_guild_permissions(manage_roles=True)
+@commands.has_permissions(manage_roles=True)
 async def _forceremove(ctx: SlashContext, user: discord.User, role: discord.Role):
     rid, error = api.removeUserFromRole(cur, ctx.guild.id, role.id, user.id)
     embed = discord.Embed(
@@ -235,7 +235,7 @@ async def _forceremove(ctx: SlashContext, user: discord.User, role: discord.Role
             required=True)
     ],
     guild_ids=BOT_GUILD_IDS)
-@commands.has_guild_permissions(manage_roles=True)
+@commands.has_permissions(manage_roles=True)
 async def _removerole(ctx: SlashContext, role: discord.Role):
     userRoles = { user.id: user for user in await ctx.guild.fetch_members().flatten() }
     users = api.listUsers(cur, ctx.guild.id, role.id)
