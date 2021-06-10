@@ -57,6 +57,7 @@ async def _game(ctx: SlashContext, input: str):
     ],
     guild_ids=BOT_GUILD_IDS)
 async def _join(ctx: SlashContext, role: discord.Role):
+    # WARN might have an error if someone tries to join a role with an uppercase in its name from /game command
     embed = discord.Embed(title=f'Adding to game "{role.name}"', color=discord.Color.dark_blue())
     error = api.addRole(cur, ctx.guild.id, role.id, ctx.author.id)
     if error:
