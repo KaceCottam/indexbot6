@@ -25,19 +25,20 @@ def removeUserFromRole(cursor: sqlite3.Cursor, guildid: int, roleid: int, userid
     try:
         cursor.execute(fr"SELECT COUNT(*) FROM GUILD_{guildid} WHERE roleid={roleid}")
         if (int(cursor.fetchone()[0]) == 0):
-            return "That role doesn't exist!"
+            return None, "That role doesn't exist!"
         cursor.execute(fr"DELETE FROM guild_{guildid} WHERE roleid={roleid} AND userid={userid}")
         cursor.execute(fr"SELECT COUNT(*) FROM guild_{guildid} WHERE roleid={roleid}")
         if (int(cursor.fetchone()[0]) == 0):
-            return roleid
+            return roleid, None
     except sqlite3.ProgrammingError:
-        return "That query doesn't exist!"
+        return None, "That query doesn't exist!"
 
-def listRoles(cursor: sqlite3.Cursor, guildid: int, userid: Optional[int] = None) -> List[int]:
-    if userid:
-        cursor.execute(fr"SELECT roleid FROM guild_{guildid} WHERE userid={userid}")
-    else:
-        cursor.execute(fr"SELECT DISTINCT roleid FROM guild_{guildid}")
+def listRoles(cursor: sqlite3.Cursor, guildid: int, userid: int) -> List[int]:
+    cursor.execute(fr"SELECT roleid FROM guild_{guildid} WHERE userid={userid}")
+    return [ i[0] for i in cursor.fetchall() ]
+
+def listAllRoles(cursor: sqlite3.Cursor, guildid: int) -> List[int]:
+    cursor.execute(fr"SELECT roleid FROM guild_{guildid}")
     return [ i[0] for i in cursor.fetchall() ]
 
 def removeRole(cursor: sqlite3.Cursor, guildid: int, roleid: int):
