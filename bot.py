@@ -24,7 +24,8 @@ LIMITS = {
     'fields': 25,
     'field_name': 256,
     'field_value': 1024,
-    'footer': 2048
+    'footer': 2048,
+    'embed': 6000
 }
 
 def split_string(string, limit=1024):
@@ -40,9 +41,9 @@ def safe_add_field(embed: discord.Embed, name, value, inline=True):
         embed.add_field(name=name, value=v1, inline=inline)
         value = v2
 
-    if len(embed.fields) > LIMITS['fields']:
+    if len(embed.fields) > LIMITS['fields'] or len(embed) > LIMITS['embed']:
         embed.clear_fields()
-        embed.add_field(name=":x: ERROR!", value='Too many characters! Tried to send a message with over 25600 characters.', inline=False)
+        embed.add_field(name=":x: ERROR!", value=f'Too many characters! Tried to send a message with over {LIMITS["embed"]} characters.', inline=False)
         return None
 
     embed.add_field(name=name, value=value, inline=inline)
