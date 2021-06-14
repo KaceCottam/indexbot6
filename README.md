@@ -10,6 +10,10 @@ A discord bot for notifying users based on pings.
 
 Requires `python-dotenv`, `discord_slash` and `discord.py` to run. Uses a `sqlite3` database back-end.
 
+Requires a bot to be made with the following permissions: `bot`, `applications.commands` and `manage_roles`, `send_messages`
+
+Make sure to enable "Server Members Intent" under the Privileged Gateway Intents tab for you bot in the discord developer website.
+
 ## How to use
 
 Configuration is done via creation of a file titled `.env` in the same folder as the python script. This file is required to configure the bot.
