@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
 import api
+from itertools import dropwhile
 
 intent = discord.Intents.default()
 intent.members = True
@@ -13,6 +14,39 @@ bot.add_check(commands.guild_only())
 slash = SlashCommand(bot, sync_commands=True, application_id=BOT_APPLICATION_ID)
 
 con, cur = api.makeApi(BOT_ROLES_DB)
+
+LIMITS = {
+    'content': 2000,
+    'embeds': 10,
+    'title': 256,
+    'description': 2048,
+    'author': 256,
+    'fields': 25,
+    'field_name': 256,
+    'field_value': 1024,
+    'footer': 2048
+}
+
+def split_string(string, limit=1024):
+    notspace = lambda x: not str.isspace(x)
+    before = string[:limit]
+    before = ''.join(dropwhile(notspace, before[::-1]))[::-1]
+    after = string[len(before):]
+    return before, after
+
+def safe_add_field(embed: discord.Embed, name, value, inline=True):
+    while len(value) > LIMITS['field_value']:
+        v1, v2 = split_string(value, LIMITS['field_value'])
+        embed.add_field(name=name, value=v1, inline=inline)
+        value = v2
+
+    if len(embed.fields) > LIMITS['fields']:
+        embed.clear_fields()
+        embed.add_field(name=":x: ERROR!", value='Too many characters! Tried to send a message with over 25600 characters.', inline=False)
+        return None
+
+    embed.add_field(name=name, value=value, inline=inline)
+    return embed
 
 @slash.slash(
     name="game",
@@ -28,7 +62,7 @@ con, cur = api.makeApi(BOT_ROLES_DB)
 async def _game(ctx: SlashContext, input: str):
     input = input.lower()
     roleDict = { r.name: r for r in ctx.guild.roles }
-    embed = discord.Embed(title=f'Adding to game "{input}"', color=discord.Color.dark_blue())
+    embed = discord.Embed(title=f'Adding to game', color=discord.Color.dark_blue())
     if input not in roleDict:
         newRole = await ctx.guild.create_role(name=input, mentionable=True)
         roleDict[newRole.name] = newRole
@@ -58,7 +92,7 @@ async def _game(ctx: SlashContext, input: str):
     guild_ids=BOT_GUILD_IDS)
 async def _join(ctx: SlashContext, role: discord.Role):
     # WARN might have an error if someone tries to join a role with an uppercase in its name from /game command
-    embed = discord.Embed(title=f'Adding to game "{role.name}"', color=discord.Color.dark_blue())
+    embed = discord.Embed(title=f'Adding to game', color=discord.Color.dark_blue())
     error = api.addRole(cur, ctx.guild.id, role.id, ctx.author.id)
     if error:
         embed.color = discord.Color.red()
@@ -82,7 +116,7 @@ async def _join(ctx: SlashContext, role: discord.Role):
     guild_ids=BOT_GUILD_IDS)
 async def _remove(ctx: SlashContext, role: discord.Role):
     rid, error = api.removeUserFromRole(cur, ctx.guild.id, role.id, ctx.author.id)
-    embed = discord.Embed(title=f"Removing from game {role.name}", color=discord.Color.dark_blue())
+    embed = discord.Embed(title=f"Removing from game", color=discord.Color.dark_blue())
     if error is not None:
         embed.add_field(name=":x: Error!", value=f"Not recieving notifications for {role.mention}!", inline=False)
         embed.color = discord.Color.red()
@@ -112,7 +146,8 @@ async def _mygames(ctx: SlashContext):
         embed.color = discord.Color.red()
         await ctx.send(embed=embed)
         return
-    embed.add_field(
+    safe_add_field(
+        embed,
         name=":video_game: Here are your roles",
         value='\n'.join( roleDict[rid].mention for rid in roles ),
         inline=False
@@ -140,7 +175,8 @@ async def _roles(ctx: SlashContext, user: discord.User = None):
         await ctx.send(embed=embed)
         return
     try:
-        embed.add_field(
+        safe_add_field(
+            embed,
             name=":video_game: Roles",
             value='\n'.join( roleDict[rid].mention for rid in roles ),
             inline=False
@@ -204,7 +240,7 @@ async def _forcejoin(ctx: SlashContext, user: discord.User, role: discord.Role):
 async def _forceremove(ctx: SlashContext, user: discord.User, role: discord.Role):
     rid, error = api.removeUserFromRole(cur, ctx.guild.id, role.id, user.id)
     embed = discord.Embed(
-    title="Force Join",
+    title="Force Remove",
     description=f"Forcing {user.mention} to be not notified by {role.mention}.",
     color=discord.Color.dark_purple())
     embed.set_image(url='https://media.giphy.com/media/xT5LMV6TnIItuFJWms/giphy.gif')
@@ -242,12 +278,17 @@ async def _removerole(ctx: SlashContext, role: discord.Role):
     api.removeRole(cur, ctx.guild.id, role.id)
     description = ' '.join( userRoles[user].mention for user in users )
     print(f"Removing role {role.id} from guild {ctx.guild.id}")
-    embed = discord.Embed(title=f'Removing game "{role.name}!"', description=description, color=discord.Color.dark_red())
+    embed = discord.Embed(title=f'Removing game', description=description, color=discord.Color.dark_red())
     embed.set_footer(text="Make sure you are aware!")
     if len(role.members) == 0:
         print(f"Deleting role {role.id} from guild {ctx.guild.id}")
         await role.delete(reason="No more notification subscriptions.")
         embed.add_field(name=':broken_heart: Deleting role', value=f'Deleting role "{role.name}"', inline=False)
+
+    while len(description) > LIMITS['content']:
+        v1, v2 = split_string(description, LIMITS['content'])
+        ctx.send(content=v1)
+        description = v2
     await ctx.send(content=description, embed=embed)
     con.commit()
 
@@ -257,6 +298,10 @@ async def _on_error(ctx, err):
         embed = discord.Embed(title=":x: Error!", description="You don't have permission to do that!", color=discord.Color.red())
         await ctx.send(embed=embed)
         return
+    if isinstance(err, discord.errors.HTTPException):
+        embed = discord.Embed(title=":x: HTTP (internal) Error!", description=err.text)
+        embed.set_footer(text="Report this to an admin!")
+        await ctx.send(embed=embed)
     raise err
 
 @slash.slash(
@@ -311,6 +356,10 @@ async def onMessage(message: discord.Message):
         mentions += content + ' '
         embed.add_field(name=role.name, value=content)
 
+    while len(mentions) > LIMITS['content']:
+        v1, v2 = split_string(mentions, LIMITS['content'])
+        message.channel.send(content=v1)
+        mentions = v2
     await message.channel.send(content=mentions, embed=embed)
 
 bot.run(BOT_TOKEN)
