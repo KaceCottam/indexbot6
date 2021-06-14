@@ -275,8 +275,44 @@ async def _help(ctx: SlashContext):
     embed.add_field(name="/removerole <role>", value="Deletes a role (admin)", inline=False)
     await ctx.send(embed=embed)
 
-bot.load_extension('maintain_tables')
-bot.load_extension('ping_roles')
+@bot.listen("on_connect")
+async def onConnect():
+    for guild in bot.guilds:
+        api.ensureTableExists(cur, guild.id)
+    con.commit() # save db
+
+    print(f"Connected as {bot.user.name}#{bot.user.discriminator} ({bot.user.id})!")
+    await bot.change_presence(activity = discord.Game(f"/help"))
+
+@bot.listen("on_guild_join")
+async def onGuildJoin(guild: discord.Guild):
+    print(f"Connected to guild {guild.id}")
+    api.ensureTableExists(cur, guild.id)
+    con.commit()
+
+@bot.listen("on_message")
+async def onMessage(message: discord.Message):
+    """pings every user subscribed to a notification list if a mention is present in a message"""
+    if message.author.bot is True: return # ignore bot commands for this
+
+    allRoles = api.listAllRoles(cur, message.guild.id)
+
+    gameRoles = [ role for role in message.role_mentions if role.id in allRoles ]
+    if len(gameRoles) == 0: return # ignore messages without role mentions
+
+    userRoles = { user.id: user for user in await message.guild.fetch_members().flatten() }
+
+    embed = discord.Embed(description="> " + message.content, color=discord.Color.random())
+    embed.set_author(name=message.author.display_name, url=message.jump_url, icon_url=message.author.avatar_url)
+    mentions = ''
+    for role in gameRoles:
+        users = api.listUsers(cur, message.guild.id, role.id)
+        content = ' '.join( userRoles[user].mention for user in users )
+        mentions += content + ' '
+        embed.add_field(name=role.name, value=content)
+
+    await message.channel.send(content=mentions, embed=embed)
+
 bot.run(BOT_TOKEN)
 
 #TODO merge
