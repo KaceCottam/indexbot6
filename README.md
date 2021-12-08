@@ -1,22 +1,24 @@
-# Index Bot (version 4)
+# Index Bot (version 6)
 
-Remake of Jake Arent's Indexbot in Python with Sqlite 3.
+Remake of Jake Arent's Indexbot in Python 3.10 with TinyDB.
 
-Made by Kace Cottam.
-
-A discord bot for notifying users based on pings.
+A discord bot for creating hidden roles that still ping users.
 
 ## Essential Information
 
-Requires `python-dotenv`, `discord_slash` and `discord.py` to run. Uses a `sqlite3` database back-end.
+Requirements are in the [`requirements.txt`](requirements.txt)
 
-Requires a bot to be made with the following permissions: `bot`, `applications.commands` and `manage_roles`, `send_messages`
+Requires a bot to be made with the following permissions: `bot`, `applications.commands` and `manage_roles`, `send_messages`.
 
 Make sure to enable "Server Members Intent" under the Privileged Gateway Intents tab for you bot in the discord developer website.
 
 ## How to use
 
 Configuration is done via creation of a file titled `.env` in the same folder as the python script. This file is required to configure the bot.
+
+## Testing
+
+Tests can be run using `behave` which is a behavioral driven testing framework. See examples in the `features` folder.
 
 ### Example `.env` file
 
