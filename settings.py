@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BOT_APPLICATION_ID = os.environ.get("BOT_APPLICATION_ID")
-BOT_TOKEN          = os.environ.get("BOT_TOKEN")
-BOT_ROLES_DB       = os.environ.get("BOT_ROLES_DB") or "./roles.db"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+BOT_ROLES_DB = os.environ.get("BOT_ROLES_DB") or "./roles.db"
 
 if BOT_APPLICATION_ID is None:
     print("APPLICATION_ID not loaded!", file=sys.stderr)

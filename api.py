@@ -1,3 +1,5 @@
+from typing import Optional
+
 from tinydb import TinyDB, Query
 
 User = Query()
@@ -36,7 +38,7 @@ def users(ds: list[dict]) -> list[str]:
     :param ds: the query result
     :return: the list of users
     """
-    return [d.userid for d in ds]
+    return [d['userid'] for d in ds]
 
 
 def roles(ds: list[dict]) -> list[str]:
@@ -45,7 +47,7 @@ def roles(ds: list[dict]) -> list[str]:
     :param ds: the query result
     :return: the list of roles
     """
-    return [d.roleid for d in ds]
+    return [d['roleid'] for d in ds]
 
 
 def initDB(name: str) -> TinyDB:
@@ -100,7 +102,7 @@ def showRolesOfGuild(db: TinyDB, guildid: str) -> list[str]:
     return roles(db.search(guild(guildid)))
 
 
-def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> dict | None:
+def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> Optional[dict]:
     """
     Removes a user from a role in a guild
     :param db:
@@ -110,9 +112,9 @@ def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> di
     :return: the user who was removed if they exist, else None
     """
     query = guild(guildid) & role(roleid) & user(userid)
-    if user := db.get(query):
+    if u := db.get(query):
         db.remove(query)
-        return user
+        return u
     return None
 
 
