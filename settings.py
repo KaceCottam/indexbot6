@@ -14,6 +14,6 @@ if BOT_APPLICATION_ID is None:
 if BOT_TOKEN is None:
     print("TOKEN not loaded!", file=sys.stderr)
 
-if any(x is None for x in BOT_APPLICATION_ID, BOT_TOKEN):
+if any(x is None for x in (BOT_APPLICATION_ID, BOT_TOKEN)):
     print("Aborting...")
     sys.exit(1)

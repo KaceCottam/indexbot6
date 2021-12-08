@@ -13,6 +13,3 @@ DELETE FROM roles WHERE guildid = ? AND roleid = ? AND userid = ?; -- remove rol
 DELETE FROM roles WHERE guildid = ? AND roleid = ?;                -- remove role from guild
 DELETE FROM roles WHERE guildid = ? AND userid = ?;                -- user exit from guild
 DELETE FROM roles WHERE guildid = ?;                               -- bot exit from guild
-
--- peewee python library?
--- sqlalchemy library?
