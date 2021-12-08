@@ -1,4 +1,5 @@
 from tinydb import TinyDB, Query
+from tinydb.storages import MemoryStorage
 
 User = Query()
 
@@ -51,10 +52,10 @@ def roles(ds: list[dict]) -> list[str]:
 def initDB(name: str) -> TinyDB:
     """
     An api function for initializing the database
-    :param name: Name of file to initialize from
+    :param name: Name of file to initialize from. Use memory storage if this is equal to ':memory:'
     :return: database
     """
-    return TinyDB(name)
+    return TinyDB(storage=MemoryStorage) if name == ':memory:' else TinyDB(name)
 
 
 def addUserToRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None:
@@ -65,7 +66,7 @@ def addUserToRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None:
     :param roleid: role id
     :param userid: user id
     """
-    db.insert({guildid: guildid, roleid: roleid, userid: userid})
+    db.insert(dict(guildid=guildid, roleid=roleid, userid=userid))
 
 
 def showUsers(db: TinyDB, guildid: str, roleid: str) -> list[str]:
@@ -116,13 +117,45 @@ def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> di
     return None
 
 
-def removeRole(db: TinyDB, guildid: str, roleid: str):
-    db.remove(guild(guildid) & role(roleid))
+def removeRole(db: TinyDB, guildid: str, roleid: str) -> list[str] | None:
+    """
+    Remove a role from the database
+    :param db: database
+    :param guildid: guild id
+    :param roleid: role id
+    :return: a list of the users that were removed if the role exists, else None
+    """
+    query = guild(guildid) & role(roleid)
+    if u := db.search(query):
+        db.remove(query)
+        return users(u)
+    return None
 
 
-def removeUser(db: TinyDB, guildid: str, userid: str):
-    db.remove(guild(guildid) & user(userid))
+def removeUser(db: TinyDB, guildid: str, userid: str) -> list[str] | None:
+    """
+    Remove a user from the database
+    :param db: database
+    :param guildid: guild id
+    :param userid: user id
+    :return: a list of roles that were removed if the user exists, else None
+    """
+    query = guild(guildid) & user(userid)
+    if u := db.search(query):
+        db.remove(query)
+        return roles(u)
+    return None
 
 
-def removeGuild(db: TinyDB, guildid: str):
-    db.remove(guild(guildid))
+def removeGuild(db: TinyDB, guildid: str) -> list[dict] | None:
+    """
+    Removes a guild from the database
+    :param db: database
+    :param guildid: guild id
+    :return: a list of roles and users that was removed if the guild exists, else None
+    """
+    query = guild(guildid)
+    if u := db.search(query):
+        db.remove(query)
+        return u
+    return None

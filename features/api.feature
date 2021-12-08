@@ -28,7 +28,7 @@ Feature: The api can be successfully interacted with.
 
   Scenario: We can remove users from a database.
     Given an empty initial database
-    And it contains user "1" in role "1" in guild "0"
+    And it contains user "1" in role "1" in guild "1"
     When removing user "1" in guild "1" from role "1"
     Then the result is user "1" in guild "1" from role "1"
     But the number of users who subscribe to role "1" in guild "1" is 0
@@ -37,16 +37,16 @@ Feature: The api can be successfully interacted with.
 
   Scenario: We can remove roles from a database.
     Given an empty initial database
-    And it contains user "1" in role "1" in guild "0"
+    And it contains user "1" in role "1" in guild "1"
     When removing role "1" from guild "1"
-    Then the result contains user "1" in guild "1" from role "1"
+    Then the result contains the user "1"
     But the number of users who subscribe to role "1" in guild "1" is 0
     But the number of roles that user "1" in guild "1" has is 0
     But the number of roles that guild "1" has is 0
 
   Scenario: We can remove guilds from a database.
     Given an empty initial database
-    And it contains user "1" in role "1" in guild "0"
+    And it contains user "1" in role "1" in guild "1"
     When removing guild "1"
     Then the result contains user "1" in guild "1" from role "1"
     But the number of users who subscribe to role "1" in guild "1" is 0
