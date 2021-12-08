@@ -101,7 +101,7 @@ def showRolesOfGuild(db: TinyDB, guildid: str) -> list[str]:
     return roles(db.search(guild(guildid)))
 
 
-def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> dict | None:
+def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None | dict:
     """
     Removes a user from a role in a guild
     :param db:
@@ -117,7 +117,7 @@ def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> di
     return None
 
 
-def removeRole(db: TinyDB, guildid: str, roleid: str) -> list[str] | None:
+def removeRole(db: TinyDB, guildid: str, roleid: str) -> None | list[str]:
     """
     Remove a role from the database
     :param db: database
@@ -132,7 +132,7 @@ def removeRole(db: TinyDB, guildid: str, roleid: str) -> list[str] | None:
     return None
 
 
-def removeUser(db: TinyDB, guildid: str, userid: str) -> list[str] | None:
+def removeUser(db: TinyDB, guildid: str, userid: str) -> None | list[str]:
     """
     Remove a user from the database
     :param db: database
@@ -147,7 +147,7 @@ def removeUser(db: TinyDB, guildid: str, userid: str) -> list[str] | None:
     return None
 
 
-def removeGuild(db: TinyDB, guildid: str) -> list[dict] | None:
+def removeGuild(db: TinyDB, guildid: str) -> None | list[dict]:
     """
     Removes a guild from the database
     :param db: database
