@@ -1,6 +1,6 @@
-behave==1.2.6
-discord-py-slash-command==3.0.1
-discord.py==1.7.3
-mypy==0.910
-tinydb==4.5.2
-python-dotenv==0.19.2
+behave~=1.2.6
+discord-py-slash-command~=3.0.1
+discord.py~=1.7.3
+mypy~=0.910
+tinydb~=4.5.2
+python-dotenv~=0.19.2
