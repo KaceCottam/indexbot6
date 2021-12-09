@@ -4,7 +4,7 @@ from tinydb.storages import MemoryStorage
 User = Query()
 
 
-def guild(id: str) -> object:
+def guild(id: str) -> Query:
     """
     A matcher to check if a query matches a guild
     :param id: the guild id to match
@@ -13,7 +13,7 @@ def guild(id: str) -> object:
     return User.guildid == id
 
 
-def role(id: str) -> object:
+def role(id: str) -> Query:
     """
     A matcher to check if a query matches a role
     :param id: the role id to match
@@ -22,7 +22,7 @@ def role(id: str) -> object:
     return User.roleid == id
 
 
-def user(id: str) -> object:
+def user(id: str) -> Query:
     """
     A matcher to check if a query matches a user
     :param id: the user id to match
