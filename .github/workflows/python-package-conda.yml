@@ -27,3 +27,10 @@ jobs:
     - name: Test with behave
       run: |
         python3.10 -m behave
+    - name: Test with mutatest
+      run: |
+        python3.10 -m mutatest
+    - name: Generate code coverage report
+        coverage -m behave
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v1
