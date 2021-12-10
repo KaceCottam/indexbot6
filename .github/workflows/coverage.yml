@@ -16,6 +16,6 @@ jobs:
           pip3.10 install -r requirements.txt
       - name: Generate code coverage report
         run: |
-          coverage -m behave
+          coverage run -m behave
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
