@@ -1,0 +1,51 @@
+name: Workflows
+
+on: [push, pull_request]
+
+jobs:
+  initial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.0
+      - name: Install dependencies
+        run: |
+          pip3.10 install -r requirements.txt
+  mypy:
+    runs-on: ubuntu-latest
+    needs: initial
+    steps:
+      - name: Typecheck with mypy
+        run: |
+          python3.10 -m mypy .
+  mutatest:
+    runs-on: ubuntu-latest
+    needs: initial
+    steps:
+      - name: Test with mutatest
+        run: |
+          mutatest
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: psf/black@stable
+  coverage:
+    runs-on: ubuntu-latest
+    needs: initial
+    steps:
+      - name: Generate code coverage report
+        run: |
+          coverage run -m behave
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v1
+  behave:
+    runs-on: ubuntu-latest
+    needs: initial
+    steps:
+      - name: Test with behave
+        run: |
+          python3.10 -m behave
