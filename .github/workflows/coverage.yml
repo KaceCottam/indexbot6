@@ -1,9 +1,9 @@
-name: Code coverage with coverage.py
+name: Code coverage with coverage package
 
 on: [push, pull_request]
 
 jobs:
-  cover:
+  coverage:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
