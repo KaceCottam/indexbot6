@@ -3,3 +3,6 @@ __pycache__/
 *.db
 venv/
 .idea/
+.coverage
+.mutatest_cache/
+.mypy_cache/

@@ -37,7 +37,7 @@ def users(ds: list[dict]) -> list[str]:
     :param ds: the query result
     :return: the list of users
     """
-    return [d['userid'] for d in ds]
+    return [d["userid"] for d in ds]
 
 
 def roles(ds: list[dict]) -> list[str]:
@@ -46,7 +46,7 @@ def roles(ds: list[dict]) -> list[str]:
     :param ds: the query result
     :return: the list of roles
     """
-    return [d['roleid'] for d in ds]
+    return [d["roleid"] for d in ds]
 
 
 def initDB(name: str) -> TinyDB:
@@ -55,7 +55,7 @@ def initDB(name: str) -> TinyDB:
     :param name: Name of file to initialize from. Use memory storage if this is equal to ':memory:'
     :return: database
     """
-    return TinyDB(storage=MemoryStorage) if name == ':memory:' else TinyDB(name)
+    return TinyDB(storage=MemoryStorage) if name == ":memory:" else TinyDB(name)
 
 
 def addUserToRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None:
@@ -101,7 +101,9 @@ def showRolesOfGuild(db: TinyDB, guildid: str) -> list[str]:
     return roles(db.search(guild(guildid)))
 
 
-def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None | dict:
+def removeUserFromRole(
+    db: TinyDB, guildid: str, roleid: str, userid: str
+) -> None | dict:
     """
     Removes a user from a role in a guild
     :param db:
