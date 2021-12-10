@@ -16,4 +16,4 @@ jobs:
           pip3.10 install -r requirements.txt
       - name: Test with mutatest
         run: |
-          python3.10 -m mutatest
+          mutatest
