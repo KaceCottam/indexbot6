@@ -101,9 +101,7 @@ def showRolesOfGuild(db: TinyDB, guildid: str) -> list[str]:
     return roles(db.search(guild(guildid)))
 
 
-def removeUserFromRole(
-    db: TinyDB, guildid: str, roleid: str, userid: str
-) -> None | dict:
+def removeUserFromRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None | dict:
     """
     Removes a user from a role in a guild
     :param db:
