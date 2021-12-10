@@ -15,8 +15,7 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Typecheck with mypy
-        run: |
-          python3.10 -m mypy .
+        run: python3.10 -m mypy .
   mutatest:
     runs-on: ubuntu-latest
     steps:
@@ -29,8 +28,7 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Test with mutatest
-        run: |
-          mutatest -o mutatest.rst
+        run: mutatest -o mutatest.rst
       - name: Save artifact
         uses: actions/upload-artifact@v2
         with:
@@ -53,8 +51,7 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Generate code coverage report
-        run: |
-          coverage run -m behave
+        run: coverage run -m behave
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v1
   behave:
@@ -69,5 +66,4 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Test with behave
-        run: |
-          behave
+        run: behave
