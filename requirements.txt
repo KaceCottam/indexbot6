@@ -5,5 +5,5 @@ mypy~=0.910
 tinydb~=4.5.2
 python-dotenv~=0.19.2
 nose~=1.3.7
-coverage~=6.2
 mutatest~=3.0.2
+coverage~=5.5

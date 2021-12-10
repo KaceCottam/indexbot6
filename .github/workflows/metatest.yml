@@ -1,0 +1,19 @@
+name: Mutation testing with mutatest
+
+on: [push, pull_request]
+
+jobs:
+  mutatest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.10.0
+      - name: Install dependencies
+        run: |
+          pip3.10 install -r requirements.txt
+      - name: Test with mutatest
+        run: |
+          python3.10 -m mutatest
