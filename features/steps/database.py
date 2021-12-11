@@ -1,28 +1,33 @@
 # type: ignore
 from behave import *
-from nose.tools import assert_equal, assert_dict_equal, assert_in, assert_is
-
+from parse_type import TypeBuilder
+from nose.tools import assert_equal, assert_dict_equal, assert_in, assert_is, assert_set_equal
+from tinydb import TinyDB
+from tinydb.storages import MemoryStorage
 import api
+
+# let us parse multiple ids
+register_type(id=TypeBuilder.with_zero_or_more(converter=str, pattern=r"\w*"))
 
 
 @given(u"an empty initial database")
 def step_impl(context):
-    context.db = api.initDB(":memory:")
+    context.db = TinyDB(storage=MemoryStorage)
 
 
-@then(u'the number of users who subscribe to role "{roleid}" in guild "{guildid}" is {result:d}')
-def step_impl(context, roleid: str, guildid: str, result: int):
-    assert_equal(len(api.showUsers(context.db, guildid, roleid)), result)
+@then(u'the users who subscribe to role "{roleid}" in guild "{guildid}" is {result:id}')
+def step_impl(context, roleid: str, guildid: str, result: list[str]):
+    assert_set_equal(set(api.showUsers(context.db, guildid, roleid)), set(result))
 
 
-@then(u'the number of roles that user "{userid}" in guild "{guildid}" has is {result:d}')
-def step_impl(context, userid: str, guildid: str, result: int):
-    assert_equal(len(api.showRolesOfUser(context.db, guildid, userid)), result)
+@then(u'the roles that user "{userid}" in guild "{guildid}" has is {result:id}')
+def step_impl(context, userid: str, guildid: str, result: list[str]):
+    assert_set_equal(set(api.showRolesOfUser(context.db, guildid, userid)), set(result))
 
 
-@then(u'the number of roles that guild "{guildid}" has is {result:d}')
-def step_impl(context, guildid: str, result: int):
-    assert_equal(len(api.showRolesOfGuild(context.db, guildid)), result)
+@then(u'the roles that guild "{guildid}" has is {result:id}')
+def step_impl(context, guildid: str, result: list[str]):
+    assert_set_equal(set(api.showRolesOfGuild(context.db, guildid)), set(result))
 
 
 @when(u'inserting user "{userid}" in guild "{guildid}" to role "{roleid}"')
@@ -80,3 +85,18 @@ def step_impl(context, userid: str, guildid: str):
 @then('the result contains the role "{roleid}"')
 def step_impl(context, roleid: str):
     assert_in(roleid, context.result)
+
+
+@then('there are no users who subscribe to role "{roleid}" in guild "{guildid}"')
+def step_impl(context, roleid: str, guildid: str):
+    assert_equal(0, len(api.showUsers(context.db, guildid, roleid)))
+
+
+@then('there are no roles that user "{userid}" in guild "{guildid}" subscribes to')
+def step_impl(context, userid: str, guildid: str):
+    assert_equal(0, len(api.showRolesOfUser(context.db, guildid, userid)))
+
+
+@then('there are no roles in guild "{guildid}"')
+def step_impl(context, guildid: str):
+    assert_equal(0, len(api.showRolesOfGuild(context.db, guildid)))

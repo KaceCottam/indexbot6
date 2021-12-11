@@ -58,7 +58,7 @@ def initDB(name: str) -> TinyDB: # pragma: no cover
     return TinyDB(storage=MemoryStorage) if name == ":memory:" else TinyDB(name)
 
 
-def addUserToRole(db: TinyDB, guildid: str, roleid: str, userid: str) -> None:
+def addUserToRole(db: TinyDB, guildid: str, roleid: str, userid: str):
     """
     Adds a user in a guild to the notification list for a role
     :param db: database
