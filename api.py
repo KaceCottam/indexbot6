@@ -49,7 +49,7 @@ def roles(ds: list[dict]) -> list[str]:
     return [d["roleid"] for d in ds]
 
 
-def initDB(name: str) -> TinyDB:
+def initDB(name: str) -> TinyDB: # pragma: no cover
     """
     An api function for initializing the database
     :param name: Name of file to initialize from. Use memory storage if this is equal to ':memory:'
