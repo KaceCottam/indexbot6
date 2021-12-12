@@ -4,6 +4,7 @@ from parse_type import TypeBuilder
 from nose.tools import assert_equal, assert_dict_equal, assert_in, assert_is, assert_set_equal
 from tinydb import TinyDB
 from tinydb.storages import MemoryStorage
+
 import api
 
 # let us parse multiple ids
