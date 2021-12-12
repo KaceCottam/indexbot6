@@ -34,12 +34,14 @@ class EmbedBuilder:
         values into separate pages on every rising edge.
         :return: the page assignment for each field
         """
-        return list(scan(
-            # this gets the page for an item
-            (field_length // MESSAGE_LIMIT for field_length in self.field_lengths()),
-            # and if a page is skipped, it is no longer skipped
-            lambda acc, x: acc + 1 if x - acc > 1 else x,
-        ))
+        return list(
+            scan(
+                # this gets the page for an item
+                (field_length // MESSAGE_LIMIT for field_length in self.field_lengths()),
+                # and if a page is skipped, it is no longer skipped
+                lambda acc, x: acc + 1 if x - acc > 1 else x,
+            )
+        )
 
     def new_page_indices(self) -> list[int]:
         """
