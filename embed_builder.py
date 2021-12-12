@@ -76,7 +76,7 @@ class EmbedBuilder:
         page_numbers = self.page_numbers()
 
         footer = self.template.get("footer") or ""
-        if max(page_numbers) != 0: # if more than one page
+        if max(page_numbers) != 0:  # if more than one page
             new_page_indices = self.new_page_indices()
             page_separators = [
                 page_separator(page_numbers[k] + 1, page_numbers[-1] + 1)
@@ -86,7 +86,9 @@ class EmbedBuilder:
             ]
             dbg = list(zip(names, values, page_separators))
             # join all the names and values with a newline
-            body = "\n".join(sep + name + value for name,value,sep in zip(names, values, page_separators))
+            body = "\n".join(
+                sep + name + value for name, value, sep in zip(names, values, page_separators)
+            )
         else:
             body = "\n".join(map(add, names, values))
 
