@@ -1,6 +1,6 @@
 from dataclasses import field, dataclass
 
-import discord
+import disnake
 
 from util import scan, add, atop
 
@@ -34,7 +34,12 @@ class EmbedBuilder:
         values into separate pages on every rising edge.
         :return: the page assignment for each field
         """
-        return [field_length // MESSAGE_LIMIT for field_length in self.field_lengths()]
+        return list(scan(
+            # this gets the page for an item
+            (field_length // MESSAGE_LIMIT for field_length in self.field_lengths()),
+            # and if a page is skipped, it is no longer skipped
+            lambda acc, x: acc + 1 if x - acc > 1 else x,
+        ))
 
     def new_page_indices(self) -> list[int]:
         """
@@ -52,7 +57,8 @@ class EmbedBuilder:
         :return: markdown format
         """
         # we can define the page separator
-        page_separator = lambda s: "-" * 10 + f" {s} " + "-" * 10
+        def page_separator(s, o):
+            return f"\n\n{'-' * 10} {s}/{o} {'-' * 10}"
 
         # format url if there is one that isn't empty
         url = self.template.get("url")
@@ -66,13 +72,14 @@ class EmbedBuilder:
 
         # page separators
         page_numbers = self.page_numbers()
-        body: str = ""
 
         footer = self.template.get("footer") or ""
         if max(page_numbers) != 0:
             new_page_indices = self.new_page_indices()
             page_separators = (
-                page_separator(page_numbers[k]) if k in new_page_indices else ""
+                page_separator(page_numbers[k] + 1, page_numbers[-1] + 1)
+                if k in new_page_indices
+                else ""
                 for k, _ in enumerate(names)
             )
 
@@ -85,6 +92,6 @@ class EmbedBuilder:
         return f"# {full_title}\n{body}\n{footer}\n".strip()
         pass
 
-    def build(self) -> list[discord.Embed]:
+    def build(self) -> list[disnake.Embed]:
         assert self.title is not None
         return list()

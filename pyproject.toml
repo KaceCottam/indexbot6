@@ -11,5 +11,9 @@ branch = true
 [mypy]
 python_version = 3.10
 warn_unused_configs = true
+pretty = true
 exclude = "features/.*"
 plugins = ["behave.plugin"]
+
+[mypy-discord.ext]
+ignore_missing_imports = true

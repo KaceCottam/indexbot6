@@ -25,6 +25,8 @@ Feature: We can build embeds dynamically and safely
     ## heading 2
     this is the second field
     """
+
+  Scenario: a bigger example
     Given an embed builder titled "Bob Ross Quotes"
     And it has a field "Quote 1" with content
     """
@@ -44,6 +46,26 @@ Feature: We can build embeds dynamically and safely
     I like to talk to trees and animals.
     That’s okay though; I have more fun than most people.
     """
+    And it has a field "Quote 5" with content
+    """
+    Let's get crazy.
+    """
+    And it has a field "Quote 6" with content
+    """
+    I can't think of anything more rewarding than being able to express yourself to others through painting.
+    Exercising the imagination, experimenting with talents, being creative; these things, to me, are truly the windows to your soul.
+    """
+    And it has a field "Quote 7" with content
+    """
+    There are no mistakes, only happy accidents.
+    """
+    And it has a field "Quote 8" with content
+    """
+    The secret to doing anything is believing that you can do it.
+    Anything that you believe you can do strong enough, you can do.
+    Anything.
+    As long as you believe.
+    """
     When rendered to a string
     Then the string result is
     """
@@ -62,4 +84,24 @@ Feature: We can build embeds dynamically and safely
     I guess I’m a little weird.
     I like to talk to trees and animals.
     That’s okay though; I have more fun than most people.
+
+    ## Quote 5
+    Let's get crazy.
+
+    ---------- 1/2 ----------
+
+    ## Quote 6
+    I can't think of anything more rewarding than being able to express yourself to others through painting.
+    Exercising the imagination, experimenting with talents, being creative; these things, to me, are truly the windows to your soul.
+
+    ## Quote 7
+    There are no mistakes, only happy accidents.
+
+    ## Quote 8
+    The secret to doing anything is believing that you can do it.
+    Anything that you believe you can do strong enough, you can do.
+    Anything.
+    As long as you believe.
+
+    ---------- 2/2 ----------
     """
