@@ -71,6 +71,8 @@ Feature: We can build embeds dynamically and safely
     """
     # Bob Ross Quotes
 
+    ---------- 1/2 ----------
+
     ## Quote 1
     We don't make mistakes, just happy little accidents.
 
@@ -88,7 +90,7 @@ Feature: We can build embeds dynamically and safely
     ## Quote 5
     Let's get crazy.
 
-    ---------- 1/2 ----------
+    ---------- 2/2 ----------
 
     ## Quote 6
     I can't think of anything more rewarding than being able to express yourself to others through painting.
@@ -102,6 +104,4 @@ Feature: We can build embeds dynamically and safely
     Anything that you believe you can do strong enough, you can do.
     Anything.
     As long as you believe.
-
-    ---------- 2/2 ----------
     """

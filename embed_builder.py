@@ -60,33 +60,33 @@ class EmbedBuilder:
         """
         # we can define the page separator
         def page_separator(s, o):
-            return f"\n\n{'-' * 10} {s}/{o} {'-' * 10}"
+            return f"\n{'-' * 10} {s}/{o} {'-' * 10}\n"
 
         # format url if there is one that isn't empty
         url = self.template.get("url")
         full_title = f"[{self.title}]({url})" if url else self.title
 
         # names are second heading after a newline
-        names = (f"\n## {name}\n" for name in self.names)
+        names = [f"\n## {name}\n" for name in self.names]
 
-        # add extra newline after each value
-        values = (value for value in self.values)
+        # convenience alias
+        values = self.values
 
         # page separators
         page_numbers = self.page_numbers()
 
         footer = self.template.get("footer") or ""
-        if max(page_numbers) != 0:
+        if max(page_numbers) != 0: # if more than one page
             new_page_indices = self.new_page_indices()
-            page_separators = (
+            page_separators = [
                 page_separator(page_numbers[k] + 1, page_numbers[-1] + 1)
                 if k in new_page_indices
                 else ""
                 for k, _ in enumerate(names)
-            )
-
+            ]
+            dbg = list(zip(names, values, page_separators))
             # join all the names and values with a newline
-            body = "\n".join(map(add, map(add, names, values), page_separators))
+            body = "\n".join(sep + name + value for name,value,sep in zip(names, values, page_separators))
         else:
             body = "\n".join(map(add, names, values))
 
