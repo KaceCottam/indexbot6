@@ -1,5 +1,5 @@
 behave~=1.2.6
-coverage~=5.5
+coverage[toml]~=5.5
 disnake~=2.2.2
 mutatest~=3.0.2
 mypy~=0.910
