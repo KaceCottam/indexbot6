@@ -50,7 +50,6 @@ class EmbedBuilder:
         # finally, pairwise addition removed one element from the list, so the first page will start with zero
         return [0, *fixed_page_numbers]
 
-
     def new_page_indices(self) -> list[int]:
         """
         Let us grab the unique values from page numbers
