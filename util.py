@@ -53,6 +53,7 @@ def pairwise(f):
     :param f: binary function
     :return:
     """
+    # TODO fix to use iterators instead of lists
     return lambda l: map(f, l, l[1:])
 
 

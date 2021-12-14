@@ -34,7 +34,8 @@ class EmbedBuilder:
 
         # let us get a running character count for all the fields
         # (partial sum)
-        running_char_count = scan(field_lengths, add)
+        # TODO after fixing list requirement for pairwise, remove list
+        running_char_count = list(scan(field_lengths, add))
 
         # create a helper function to do (x // MESSAGE_LIMIT)
         divide_by_limit = jot(flip(floordiv), MESSAGE_LIMIT)
