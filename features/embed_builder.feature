@@ -71,7 +71,7 @@ Feature: We can build embeds dynamically and safely
     """
     # Bob Ross Quotes
 
-    ---------- 1/2 ----------
+    ---------- 1/3 ----------
 
     ## Quote 1
     We don't make mistakes, just happy little accidents.
@@ -82,6 +82,8 @@ Feature: We can build embeds dynamically and safely
     ## Quote 3
     There's nothing wrong with having a tree as a friend.
 
+    ---------- 2/3 ----------
+
     ## Quote 4
     I guess I’m a little weird.
     I like to talk to trees and animals.
@@ -90,11 +92,11 @@ Feature: We can build embeds dynamically and safely
     ## Quote 5
     Let's get crazy.
 
-    ---------- 2/2 ----------
-
     ## Quote 6
     I can't think of anything more rewarding than being able to express yourself to others through painting.
     Exercising the imagination, experimenting with talents, being creative; these things, to me, are truly the windows to your soul.
+
+    ---------- 3/3 ----------
 
     ## Quote 7
     There are no mistakes, only happy accidents.
@@ -104,4 +106,39 @@ Feature: We can build embeds dynamically and safely
     Anything that you believe you can do strong enough, you can do.
     Anything.
     As long as you believe.
+    """
+
+  Scenario: we can make a very large field and it will be on its own page.
+    Given an embed builder titled "beeg"
+    And it has a field "before" with content
+    """
+    hello
+    """
+    And it has a field "513 a's" with content
+    """
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    """
+    And it has a field "after" with content
+    """
+    goodbye
+    """
+    When rendered to a string
+    Then the string result is
+    """
+    # beeg
+
+    ---------- 1/3 ----------
+
+    ## before
+    hello
+
+    ---------- 2/3 ----------
+
+    ## 513 a's
+    aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+    ---------- 3/3 ----------
+
+    ## after
+    goodbye
     """

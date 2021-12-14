@@ -1,6 +1,6 @@
 # type: ignore
 from behave import *
-from util import atop, fork, jot, add, sub, mul
+from util import atop, fork, jot, add, mul
 from nose.tools import assert_equals
 
 

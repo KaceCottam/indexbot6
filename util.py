@@ -45,3 +45,21 @@ def rtack(_):
     :return: next parameter passed in
     """
     return lambda x: x
+
+
+def pairwise(f):
+    """
+    Allows us to do a function on pairs from a list.
+    :param f: binary function
+    :return:
+    """
+    return lambda l: map(f, l, l[1:])
+
+
+def flip(f):
+    """
+    Allows us to flip the operands of a binary operator
+    :param f: binary function
+    :return: f(b,a)
+    """
+    return lambda a, b: f(b, a)
