@@ -1,4 +1,4 @@
-# Index Bot (version 6)
+# Index Bot (version 6) [![codecov](https://codecov.io/gh/KaceCottam/indexbot6/branch/master/graph/badge.svg?token=APPT7FJZK2)](https://codecov.io/gh/KaceCottam/indexbot6)
 
 Remake of Jake Arent's Indexbot in Python 3.10 with TinyDB.
 
