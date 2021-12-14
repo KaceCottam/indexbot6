@@ -1,4 +1,4 @@
-# Index Bot (version 6) [![codecov](https://codecov.io/gh/KaceCottam/indexbot6/branch/master/graph/badge.svg?token=APPT7FJZK2)](https://codecov.io/gh/KaceCottam/indexbot6) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) 
+# Index Bot (version 6) [![codecov](https://codecov.io/gh/KaceCottam/indexbot6/branch/master/graph/badge.svg?token=APPT7FJZK2)](https://codecov.io/gh/KaceCottam/indexbot6) [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black) ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/KaceCottam/indexbot6/Workflows)
 
 Remake of Jake Arent's Indexbot in Python 3.10 with TinyDB.
 
