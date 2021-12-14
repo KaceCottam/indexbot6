@@ -2,7 +2,7 @@ from dataclasses import field, dataclass
 
 import disnake
 
-from util import scan, add, atop
+from util import *
 
 MESSAGE_LIMIT = 512  # limit before adding new pages
 
@@ -48,7 +48,7 @@ class EmbedBuilder:
 
         # finally, pairwise addition removed one element from the list, so the first page will start with zero
         return [0, *fixed_page_numbers]
-        
+
 
     def new_page_indices(self) -> list[int]:
         """
@@ -63,7 +63,7 @@ class EmbedBuilder:
         """
         Conversion to a string for embed builder
         results in the markdown representation of the full content.
-        :return: markdown format
+        :return: Markdown format
         """
         # we can define the page separator
         def page_separator(s, o):
@@ -91,7 +91,6 @@ class EmbedBuilder:
                 else ""
                 for k, _ in enumerate(names)
             ]
-            dbg = list(zip(names, values, page_separators))
             # join all the names and values with a newline
             body = "\n".join(
                 sep + name + value for name, value, sep in zip(names, values, page_separators)
