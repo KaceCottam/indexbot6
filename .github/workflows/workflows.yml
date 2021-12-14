@@ -51,9 +51,12 @@ jobs:
       - name: Install dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Generate code coverage report
-        run: coverage run -m behave
-      - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v1
+        run: coverage run -m behave && coverage report > coverage-results
+      - name: Save artifcat
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-results
+          path: coverage-results
   behave:
     runs-on: ubuntu-latest
     steps:
