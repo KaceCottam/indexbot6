@@ -1,5 +1,5 @@
 /.idea
 /.env
-/*.db
+/*.db.json
 # Added by cargo
 /target
