@@ -1,8 +1,5 @@
-__pycache__/
-*.env
-*.db
-venv/
-.idea/
-.coverage
-.mutatest_cache/
-.mypy_cache/
+/.idea
+/.env
+/*.db
+# Added by cargo
+/target
