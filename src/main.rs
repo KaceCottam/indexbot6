@@ -14,7 +14,8 @@ use poise::serenity_prelude::{
     InteractionApplicationCommandCallbackDataFlags, InteractionResponseType, Mentionable,
     MessageBuilder, ReactionType, Role, User, UserId,
 };
-use poise::{serenity_prelude as serenity, FrameworkOptions, PrefixFrameworkOptions};
+use poise::{FrameworkOptions, PrefixFrameworkOptions};
+use log::{info, error, LevelFilter};
 
 use crate::api::RolesDatabase;
 
@@ -81,7 +82,7 @@ async fn join_role(ctx: &Context<'_>, role: &Role, content: Option<String>) -> R
                 })
                 .await?;
 
-            println!(
+            info!(
                 "({}) {} joined {}!",
                 role.guild_id,
                 ctx.author().id,
@@ -271,7 +272,7 @@ pub async fn leave(
             ctx.send(|f| f.embed(successful_interaction(|f| f.description(message))))
                 .await?;
 
-            println!("({}) {} left {}!", role.guild_id, ctx.author().id, role.id);
+            info!("({}) {} left {}!", role.guild_id, ctx.author().id, role.id);
 
             save_to_db(&ctx)
         }
@@ -299,8 +300,8 @@ fn save_to_db(ctx: &Context) {
         .unwrap()
         .save(env::var("BOT_ROLES_DB").unwrap())
     {
-        Err(e) => println!("Error! {}", e),
-        Ok(_) => println!("Saved to {}.", env::var("BOT_ROLES_DB").unwrap()),
+        Err(e) => error!("Error! {}", e),
+        Ok(_) => info!("Saved to {}.", env::var("BOT_ROLES_DB").unwrap()),
     }
 }
 
@@ -369,9 +370,9 @@ async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
     match error {
         poise::FrameworkError::Setup { error } => panic!("Failed to start bot: {:?}", error),
         poise::FrameworkError::Command { error, ctx } => {
-            println!("Error in command `{}`: {:?}", ctx.command().name, error)
+            error!("Error in command `{}`: {:?}", ctx.command().name, error)
         }
-        _ => println!("Other error: {:?}", error),
+        _ => error!("Other error: {:?}", error),
     }
 }
 
@@ -387,7 +388,7 @@ async fn event_listener(
             user,
             member_data_if_available: _,
         } => {
-            println!(
+            info!(
                 "Guild ({}) member left: {}#{} ({})",
                 guild_id, user.name, user.discriminator, user.id
             )
@@ -398,21 +399,21 @@ async fn event_listener(
             removed_role_data_if_available,
         } => {
             if let Some(role) = removed_role_data_if_available {
-                println!(
+                info!(
                     "Guild ({}) role deleted {} ({})",
                     guild_id, role.name, removed_role_id
                 )
             } else {
-                println!("Guild ({}) role deleted ({})", guild_id, removed_role_id)
+                info!("Guild ({}) role deleted ({})", guild_id, removed_role_id)
             }
         }
         poise::Event::Ready { data_about_bot } => {
-            println!(
+            info!(
                 "Bot {}#{} ({}) connected!",
                 data_about_bot.user.name, data_about_bot.user.discriminator, data_about_bot.user.id
             );
-            println!("Application id: {}", data_about_bot.application.id);
-            println!("----------");
+            info!("Application id: {}", data_about_bot.application.id);
+            info!("----------");
             ctx.set_activity(Activity::listening("$help")).await;
         }
         poise::Event::Message { new_message } => {
@@ -464,7 +465,7 @@ async fn event_listener(
             {
                 Ok(t) => t,
                 Err(e) => {
-                    println!(
+                    error!(
                         "Failed to make thread for mention in message ({})! {}",
                         new_message.id, e
                     );
@@ -480,7 +481,7 @@ async fn event_listener(
                 .send_message(&ctx, |m| m.content("@everyone"))
                 .await?;
 
-            println!(
+            info!(
                 "Notified roles ({}) in guild ({})!",
                 new_message
                     .mention_roles
@@ -509,7 +510,7 @@ async fn event_listener(
                     .add_user_to_role(guild_id.0, role_id, m.user.id.0)
                 {
                     Ok(_) => {
-                        println!("({}) {} joined {}!", guild_id, m.user.id, role_id);
+                        info!("({}) {} joined {}!", guild_id, m.user.id, role_id);
                         ":white_check_mark: Added you to the role!"
                     }
                     Err(_) => ":x: Failed to add you to the role. *Are you already in it?*",
@@ -536,6 +537,10 @@ async fn command_check(ctx: Context<'_>) -> Result<bool, Error> {
 
 #[tokio::main]
 async fn main() {
+    env_logger::builder()
+        .filter(Some("indexbot6"), LevelFilter::Info)
+        .init();
+
     env::dotenv().expect("Error loading environment file.");
     let db_file: PathBuf = env::var("BOT_ROLES_DB")
         .expect("Expected BOT_ROLES_DB to be set in environment.")
