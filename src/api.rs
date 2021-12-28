@@ -20,6 +20,16 @@ pub struct Roles {
     user_id: UserId,
 }
 
+impl Roles {
+    pub fn new(guild_id: GuildId, role_id: RoleId, user_id: UserId) -> Self {
+        Roles {
+            guild_id,
+            role_id,
+            user_id,
+        }
+    }
+}
+
 unsafe impl Send for Roles {}
 unsafe impl Sync for Roles {}
 
@@ -56,15 +66,8 @@ impl RolesDatabase {
         role_id: R,
         user_id: U,
     ) -> Result<()> {
-        let guild_id = guild_id.into();
-        let role_id = role_id.into();
-        let user_id = user_id.into();
         self.0
-            .insert_unique(Roles {
-                guild_id,
-                role_id,
-                user_id,
-            })
+            .insert_unique(Roles::new(guild_id.into(), role_id.into(), user_id.into()))
             .map_err(|_| ApiError::Insertion)
     }
     pub fn show_roles_of_user<G: Into<GuildId>, U: Into<UserId>>(
@@ -171,61 +174,17 @@ mod tests {
     fn create_test_db() -> RolesDatabase {
         RolesDatabase {
             0: Database::from(vec![
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 1u64,
-                    user_id: 1u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 1u64,
-                    user_id: 2u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 1u64,
-                    user_id: 3u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 1u64,
-                    user_id: 4u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 1u64,
-                    user_id: 5u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 2u64,
-                    user_id: 1u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 2u64,
-                    user_id: 2u64,
-                },
-                Roles {
-                    guild_id: 1u64,
-                    role_id: 2u64,
-                    user_id: 6u64,
-                },
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 1u64,
-                    user_id: 1u64,
-                },
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 1u64,
-                    user_id: 6u64,
-                },
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 3u64,
-                    user_id: 7u64,
-                },
+                Roles::new(1, 1, 1),
+                Roles::new(1, 1, 2),
+                Roles::new(1, 1, 3),
+                Roles::new(1, 1, 4),
+                Roles::new(1, 1, 5),
+                Roles::new(1, 2, 1),
+                Roles::new(1, 2, 2),
+                Roles::new(1, 2, 6),
+                Roles::new(2, 1, 1),
+                Roles::new(2, 1, 6),
+                Roles::new(2, 3, 7),
             ]),
         }
     }
@@ -284,21 +243,9 @@ mod tests {
         assert_eq!(
             db.remove_guild(2u64).unwrap(),
             vec![
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 1u64,
-                    user_id: 1u64
-                },
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 1u64,
-                    user_id: 6u64
-                },
-                Roles {
-                    guild_id: 2u64,
-                    role_id: 3u64,
-                    user_id: 7u64
-                },
+                Roles::new(2, 1, 1),
+                Roles::new(2, 1, 6),
+                Roles::new(2, 3, 7),
             ]
         );
         assert!(db.remove_guild(10000u64).is_err());
