@@ -7,6 +7,8 @@ use std::io::BufReader;
 use std::path::Path;
 use thiserror::Error;
 use tqdb::{remove, search, Database, Query};
+#[cfg(test)]
+use mutagen::mutate;
 
 pub type Snowflake = u64;
 pub type GuildId = Snowflake;
@@ -54,12 +56,16 @@ pub enum ApiError {
 type Result<T> = core::result::Result<T, ApiError>;
 
 impl RolesDatabase {
+
+    #[cfg_attr(test, mutate)]
     pub fn try_from<'a>(filename: impl Into<&'a Path>) -> Result<Self> {
         let file = File::open(filename.into()).map_err(|_| ApiError::BadRead)?;
         let br = BufReader::new(file);
         let db = Database::try_from(br).map_err(|_| ApiError::BadRead)?;
         Ok(Self { 0: db })
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn add_user_to_role<G: Into<GuildId>, R: Into<RoleId>, U: Into<UserId>>(
         &mut self,
         guild_id: G,
@@ -70,6 +76,8 @@ impl RolesDatabase {
             .insert_unique(Roles::new(guild_id.into(), role_id.into(), user_id.into()))
             .map_err(|_| ApiError::Insertion)
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn show_roles_of_user<G: Into<GuildId>, U: Into<UserId>>(
         &self,
         guild_id: G,
@@ -81,6 +89,8 @@ impl RolesDatabase {
             .map(|it| &it.role_id)
             .collect()
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn show_users_of_role<G: Into<GuildId>, R: Into<RoleId>>(
         &self,
         guild_id: G,
@@ -88,13 +98,14 @@ impl RolesDatabase {
     ) -> Vec<&UserId> {
         let guild_id = guild_id.into();
         let role_id = role_id.into();
-        let mut res =
+        let res: Vec<_> =
             search!(&self.0 => move |it: &Roles| it.guild_id == guild_id && it.role_id == role_id)
                 .map(|it| &it.user_id)
-                .collect::<Vec<&UserId>>();
-        res.dedup();
+                .collect();
         res
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn show_roles_of_guild<G: Into<GuildId>>(&self, guild_id: G) -> Vec<&RoleId> {
         let guild_id = guild_id.into();
         let mut res = search!(&self.0 => move |it: &Roles| it.guild_id == guild_id)
@@ -103,6 +114,8 @@ impl RolesDatabase {
         res.dedup();
         res
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn remove_user_from_role<G: Into<GuildId>, R: Into<RoleId>, U: Into<UserId>>(
         &mut self,
         guild_id: G,
@@ -117,6 +130,8 @@ impl RolesDatabase {
             .map(|it| it.user_id)
             .ok_or(ApiError::Removal)
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn remove_role<G: Into<GuildId>, R: Into<RoleId>>(
         &mut self,
         guild_id: G,
@@ -134,6 +149,8 @@ impl RolesDatabase {
             Ok(users)
         }
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn remove_user<G: Into<GuildId>, U: Into<UserId>>(
         &mut self,
         guild_id: G,
@@ -151,6 +168,8 @@ impl RolesDatabase {
             Ok(roles)
         }
     }
+
+    #[cfg_attr(test, mutate)]
     pub fn remove_guild<G: Into<GuildId>>(&mut self, guild_id: G) -> Result<Vec<Roles>> {
         let guild_id = guild_id.into();
         let roles = remove!(&mut self.0 => move |it: &Roles| it.guild_id == guild_id )
