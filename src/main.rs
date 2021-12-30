@@ -9,13 +9,14 @@ use std::time::Duration;
 
 use chrono::Utc;
 use dotenv as env;
+use futures::{stream, StreamExt};
+use log::{error, info, LevelFilter};
 use poise::serenity_prelude::{
     Activity, ButtonStyle, Color, Context as SerenityContext, CreateEmbed,
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType, Mentionable,
-    MessageBuilder, ReactionType, Role, User, UserId,
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType, MessageBuilder,
+    ReactionType, Role, RoleId, User, UserId,
 };
 use poise::{FrameworkOptions, PrefixFrameworkOptions};
-use log::{info, error, LevelFilter};
 
 use crate::api::RolesDatabase;
 
@@ -42,6 +43,18 @@ fn unsuccessful_interaction(
         f(g).color(Color::DARK_RED)
             .title(":x: Failure")
             .footer(|f| f.text("If you think this is a mistake, please tell an admin!"))
+    }
+}
+
+fn save_to_db(ctx: &Context) {
+    match ctx
+        .data()
+        .lock()
+        .unwrap()
+        .save(env::var("BOT_ROLES_DB").unwrap())
+    {
+        Err(e) => error!("Error! {}", e),
+        Ok(_) => info!("Saved to {}.", env::var("BOT_ROLES_DB").unwrap()),
     }
 }
 
@@ -192,21 +205,6 @@ pub async fn create(
     join_role(&ctx, &role, Some(content)).await
 }
 
-/// Display the members of a role
-#[poise::command(slash_command, category = "game")]
-pub async fn members(
-    ctx: Context<'_>,
-    #[description = "Selected role"] role: Role,
-) -> Result<(), Error> {
-    ctx.say(format!(
-        "{} wants to see the role {}!",
-        ctx.author().name,
-        role.mention()
-    ))
-    .await?;
-    Ok(())
-}
-
 /// Leave the notification list for a role
 #[poise::command(slash_command, category = "game")]
 pub async fn leave(
@@ -293,16 +291,45 @@ pub async fn leave(
     Ok(())
 }
 
-fn save_to_db(ctx: &Context) {
-    match ctx
+/// Display the members of a role
+#[poise::command(slash_command, category = "game", ephemeral = true)]
+pub async fn members(
+    ctx: Context<'_>,
+    #[description = "Selected role"] role: Role,
+) -> Result<(), Error> {
+    let users: Vec<_> = ctx
         .data()
         .lock()
         .unwrap()
-        .save(env::var("BOT_ROLES_DB").unwrap())
-    {
-        Err(e) => error!("Error! {}", e),
-        Ok(_) => info!("Saved to {}.", env::var("BOT_ROLES_DB").unwrap()),
-    }
+        .show_users_of_role(role.guild_id, role.id)
+        .into_iter()
+        .copied()
+        .map(|u| UserId::from(u))
+        .collect();
+
+    let users: Vec<_> = stream::iter(users)
+        .filter_map(|u| async move { u.to_user_cached(ctx.discord()).await })
+        .collect()
+        .await;
+
+    let mb = users
+        .into_iter()
+        .fold(&mut MessageBuilder::new(), |mb, u| {
+            mb.user(u);
+            mb
+        })
+        .build();
+
+    ctx.send(|f| {
+        f.embed(|f| {
+            f.title(format!("Users subscribed to {}:", role.name))
+                .color(Color::DARK_GREEN)
+                .description(mb)
+        })
+    })
+    .await?;
+
+    Ok(())
 }
 
 /// List the roles that a user will be notified for, or a guild if there is no user.
@@ -311,20 +338,57 @@ pub async fn list(
     ctx: Context<'_>,
     #[description = "Selected user"] user: Option<User>,
 ) -> Result<(), Error> {
-    if let Some(user) = user {
-        ctx.say(format!(
-            "{} wants list the roles of user {}!",
-            ctx.author().name,
-            user.mention()
-        ))
-        .await?;
-    } else {
-        ctx.say(format!(
-            "{} wants list the roles of the server!",
-            ctx.author().name
-        ))
-        .await?;
-    }
+    let guild_id = match ctx.guild_id() {
+        Some(id) => id,
+        None => return Ok(()),
+    };
+
+    let roles: Vec<api::RoleId> = user.as_ref().map_or_else(
+        || {
+            ctx.data()
+                .lock()
+                .unwrap()
+                .show_roles_of_guild(guild_id)
+                .into_iter()
+                .copied()
+                .collect()
+        },
+        |u| {
+            ctx.data()
+                .lock()
+                .unwrap()
+                .show_roles_of_user(guild_id, u.id)
+                .into_iter()
+                .copied()
+                .collect()
+        },
+    );
+
+    let roles = roles
+        .into_iter()
+        .filter_map(|r| RoleId::from(r).to_role_cached(ctx.discord()));
+
+    let title = match &user {
+        Some(user) => user.name.clone(),
+        None => ctx.guild().unwrap().name,
+    };
+
+    let mb = roles
+        .fold(&mut MessageBuilder::new(), |mb, u| {
+            mb.role(u);
+            mb
+        })
+        .build();
+
+    ctx.send(|f| {
+        f.embed(|f| {
+            f.title(format!("Roles of {}:", title))
+                .color(Color::DARK_GREEN)
+                .description(mb)
+        })
+    })
+    .await?;
+
     Ok(())
 }
 
