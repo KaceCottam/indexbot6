@@ -1,14 +1,14 @@
 #![macro_use]
 #![warn(rustdoc::all)]
 
+#[cfg(test)]
+use mutagen::mutate;
 use serde_derive::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use thiserror::Error;
 use tqdb::{remove, search, Database, Query};
-#[cfg(test)]
-use mutagen::mutate;
 
 pub type Snowflake = u64;
 pub type GuildId = Snowflake;
@@ -56,7 +56,6 @@ pub enum ApiError {
 type Result<T> = core::result::Result<T, ApiError>;
 
 impl RolesDatabase {
-
     #[cfg_attr(test, mutate)]
     pub fn try_from<'a>(filename: impl Into<&'a Path>) -> Result<Self> {
         let file = File::open(filename.into()).map_err(|_| ApiError::BadRead)?;
