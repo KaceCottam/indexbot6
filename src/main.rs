@@ -22,7 +22,8 @@ use crate::api::RolesDatabase;
 
 mod api;
 
-type Data = std::sync::Mutex<RolesDatabase>;
+#[derive(Debug)]
+pub struct Data(std::sync::Mutex<RolesDatabase>);
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
 
@@ -49,6 +50,7 @@ fn unsuccessful_interaction(
 fn save_to_db(ctx: &Context) {
     match ctx
         .data()
+        .0
         .lock()
         .unwrap()
         .save(env::var("BOT_ROLES_DB").unwrap())
@@ -59,7 +61,7 @@ fn save_to_db(ctx: &Context) {
 }
 
 async fn join_role(ctx: &Context<'_>, role: &Role, content: Option<String>) -> Result<(), Error> {
-    let choice = ctx.data().lock().unwrap().add_user_to_role(
+    let choice = ctx.data().0.lock().unwrap().add_user_to_role(
         ctx.guild_id().unwrap(),
         role.id,
         ctx.author().id,
@@ -216,6 +218,7 @@ pub async fn leave(
 
     let choice =
         ctx.data()
+            .0
             .lock()
             .unwrap()
             .remove_user_from_role(guild_id, role.id, ctx.author().id);
@@ -244,6 +247,7 @@ pub async fn leave(
         .find(|m| m.roles.contains(&role.id));
     let subscribers = ctx
         .data()
+        .0
         .lock()
         .unwrap()
         .show_users_of_role(guild_id, role.id)
@@ -294,6 +298,7 @@ pub async fn members(
 ) -> Result<(), Error> {
     let users: Vec<_> = ctx
         .data()
+        .0
         .lock()
         .unwrap()
         .show_users_of_role(role.guild_id, role.id)
@@ -341,6 +346,7 @@ pub async fn list(
     let roles: Vec<api::RoleId> = user.as_ref().map_or_else(
         || {
             ctx.data()
+                .0
                 .lock()
                 .unwrap()
                 .show_roles_of_guild(guild_id)
@@ -350,6 +356,7 @@ pub async fn list(
         },
         |u| {
             ctx.data()
+                .0
                 .lock()
                 .unwrap()
                 .show_roles_of_user(guild_id, u.id)
@@ -482,6 +489,7 @@ async fn on_interaction_create(
 
     let response =
         match user_data
+            .0
             .lock()
             .unwrap()
             .add_user_to_role(guild_id.0, role_id, m.user.id.0)
@@ -528,6 +536,7 @@ async fn on_message(
         .iter()
         .flat_map(|id| {
             user_data
+                .0
                 .lock()
                 .unwrap()
                 .show_users_of_role(guild_id.0, id.0)
@@ -659,7 +668,11 @@ async fn main() {
     poise::Framework::build()
         .token(env::var("BOT_TOKEN").expect("Expected BOT_TOKEN to be set in environment."))
         .user_data_setup(move |_ctx, _ready, _framework| {
-            Box::pin(async move { Ok(std::sync::Mutex::from(db)) })
+            Box::pin(async move {
+                Ok(Data {
+                    0: std::sync::Mutex::from(db),
+                })
+            })
         })
         .options(options)
         .run()
