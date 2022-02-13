@@ -5,7 +5,7 @@
 
 use dotenv as env;
 use log::LevelFilter;
-use poise::{FrameworkOptions, PrefixFrameworkOptions};
+use poise::{serenity_prelude::Color, FrameworkOptions, PrefixFrameworkOptions};
 use std::path::PathBuf;
 
 use crate::api::RolesDatabase;
@@ -28,13 +28,31 @@ type Context<'a> = poise::Context<'a, Data, Error>;
 #[poise::command(prefix_command, track_edits, slash_command)]
 pub async fn help(
     ctx: Context<'_>,
-    #[description = "Specific command to show help about"] command: Option<String>,
+    // #[description = "Specific command to show help about"] command: Option<String>,
 ) -> Result<(), Error> {
-    let config = poise::builtins::HelpConfiguration {
-        extra_text_at_bottom: " Type $help command for more info on a command. You can edit your message to the bot and the bot will edit its response.",
-        ..Default::default()
-    };
-    poise::builtins::help(ctx, command.as_deref(), config).await?;
+    // let config = poise::builtins::HelpConfiguration {
+    //     extra_text_at_bottom: " Type $help command for more info on a command. You can edit your message to the bot and the bot will edit its response.",
+    //     ephemeral: false,
+    //     ..Default::default()
+    // };
+    // poise::builtins::help(ctx, command.as_deref(), config).await?;
+    // Ok(())
+
+    ctx.send(|f| f
+        .embed(|f| f
+            .title("Help")
+            .color(Color::FOOYOO)
+            .description("Allows for various hidden roles.")
+            .footer(|f| f
+                .text("<> denotes required arguments, [] denotes optional arguments"))
+            .field("/help", "Show this menu", false)
+            .field("/deals <search string>", "Fetch game deals from isthereanydeal.com for a game", false)
+            .field("/game create <role name>", "Join or create the notification list for a role", false)
+            .field("/game leave <@role>", "Leave the notification list for a role", false)
+            .field("/game list [@user]", "List the role that a user will be notified for, or a guild if there is no user", false)
+            .field("/game join <@role>", "Join the notification list for a role", false)
+            .field("/game members <@role>", "Display the members of a role", false))
+    ).await?;
     Ok(())
 }
 
