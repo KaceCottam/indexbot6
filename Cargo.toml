@@ -7,7 +7,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
-poise = { git = "https://github.com/kangalioo/poise" }
+poise = { git = "https://github.com/kangalioo/poise", branch = "develop" }
 dotenv = "0.15.0"
 tqdb = "1.0.6"
 thiserror = "1.0.30"
@@ -24,4 +24,3 @@ percent-encoding = "2.1.0"
 [dev-dependencies]
 mutagen = {git = "https://github.com/llogiq/mutagen"}
 async-trait = "0.1"
-
