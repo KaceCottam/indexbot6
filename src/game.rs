@@ -111,13 +111,19 @@ pub async fn join(
     join_role(&ctx, &role, None).await
 }
 
-/// Category
+/// Interact with game roles
+/// Subcommands:
+/// - create <role name>: Join or create the notification list for a role
+/// - leave <@role>: Leave the notification list for a role
+/// - list [@user]: List the role that a user will be notified for, or a guild if there is no user
+/// - join <@role>: Join the notification list for a role
+/// - members <@role>: Display the members of a role
 #[poise::command(slash_command, category = "game")]
 pub async fn game(_ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-/// Join or create the notification list for a game
+/// Join or create the notification list for a role
 #[poise::command(slash_command, category = "game")]
 pub async fn create(
     ctx: Context<'_>,
