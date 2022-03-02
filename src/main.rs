@@ -51,7 +51,8 @@ pub async fn help(
             .field("/game leave <@role>", "Leave the notification list for a role", false)
             .field("/game list [@user]", "List the role that a user will be notified for, or a guild if there is no user", false)
             .field("/game join <@role>", "Join the notification list for a role", false)
-            .field("/game members <@role>", "Display the members of a role", false))
+            .field("/game members <@role>", "Display the members of a role", false)
+            .field("$game invite <@role> (<@users> ..)", "Makes specified users join a role. Sends a button to them to opt out.", false))
     ).await?;
     Ok(())
 }
@@ -87,7 +88,7 @@ async fn main() {
             help(),
             register(),
             poise::Command {
-                subcommands: vec![join(), create(), members(), list(), leave()],
+                subcommands: vec![join(), create(), members(), list(), leave(), invite()],
                 ..game()
             },
             deals(),

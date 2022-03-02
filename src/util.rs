@@ -2,7 +2,7 @@ use dotenv as env;
 use log::{error, info};
 use poise::serenity_prelude::{Color, CreateEmbed};
 
-use crate::Context;
+use crate::Data;
 
 pub fn successful_interaction(
     f: impl FnOnce(&mut CreateEmbed) -> &mut CreateEmbed,
@@ -24,9 +24,8 @@ pub fn unsuccessful_interaction(
     }
 }
 
-pub fn save_to_db(ctx: &Context) {
+pub fn save_to_db(ctx: &Data) {
     match ctx
-        .data()
         .0
         .lock()
         .unwrap()

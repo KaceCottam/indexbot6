@@ -67,8 +67,10 @@ async fn join_role(ctx: &Context<'_>, role: &Role, content: Option<String>) -> R
         role.id
     );
 
-    // wait 3 minutes
-    tokio::spawn(tokio::time::sleep(Duration::from_secs(60 * 3))).await?;
+    save_to_db(ctx.data());
+
+    // wait 30 minutes
+    tokio::spawn(tokio::time::sleep(Duration::from_secs(60 * 30))).await?;
 
     // turn off the button
     'timeout: {
@@ -82,23 +84,24 @@ async fn join_role(ctx: &Context<'_>, role: &Role, content: Option<String>) -> R
         };
 
         m.edit(ctx.discord(), |f| {
-            f.embed(successful_interaction(|f| f.description(content.clone())))
-                .components(|f| {
-                    f.create_action_row(|f| {
-                        f.create_button(|f| {
-                            f.custom_id(role.id)
-                                .emoji(ReactionType::from('🔔'))
-                                .style(ButtonStyle::Primary)
-                                .label("Join this role!")
-                                .disabled(true)
-                        })
+            f.embed(successful_interaction(|f| {
+                f.description(content.clone())
+                    .footer(|f| f.text("Button timed out! Do a new command."))
+            }))
+            .components(|f| {
+                f.create_action_row(|f| {
+                    f.create_button(|f| {
+                        f.custom_id(role.id)
+                            .emoji(ReactionType::from('🔔'))
+                            .style(ButtonStyle::Primary)
+                            .label("Join this role!")
+                            .disabled(true)
                     })
                 })
+            })
         })
         .await?;
     }
-
-    save_to_db(ctx);
     Ok(())
 }
 
@@ -236,7 +239,7 @@ pub async fn leave(
 
     info!("({}) {} left {}!", role.guild_id, ctx.author().id, role.id);
 
-    save_to_db(&ctx);
+    save_to_db(ctx.data());
     Ok(())
 }
 
@@ -246,7 +249,7 @@ pub async fn members(
     ctx: Context<'_>,
     #[description = "Selected role"] role: Role,
 ) -> Result<(), Error> {
-    let users: Vec<_> = ctx
+    let mut users: Vec<_> = ctx
         .data()
         .0
         .lock()
@@ -256,6 +259,8 @@ pub async fn members(
         .copied()
         .map(UserId::from)
         .collect();
+
+    users.dedup();
 
     let users: Vec<_> = stream::iter(users)
         .filter_map(|u| async move { u.to_user_cached(ctx.discord()).await })
@@ -293,7 +298,7 @@ pub async fn list(
         None => return Ok(()),
     };
 
-    let roles: Vec<api::RoleId> = user.as_ref().map_or_else(
+    let mut roles: Vec<api::RoleId> = user.as_ref().map_or_else(
         || {
             ctx.data()
                 .0
@@ -315,6 +320,9 @@ pub async fn list(
                 .collect()
         },
     );
+
+    roles.sort();
+    roles.dedup();
 
     let roles = roles
         .into_iter()
@@ -341,5 +349,111 @@ pub async fn list(
     })
     .await?;
 
+    Ok(())
+}
+
+/// Invite users to a role
+#[poise::command(prefix_command, category = "game")]
+pub async fn invite(
+    ctx: Context<'_>,
+    #[description = "Selected Role"] role: Role,
+    #[description = "Selected Users"] users: Vec<User>,
+) -> Result<(), Error> {
+    let mut choices = users.into_iter().map(|u| {
+        (
+            u.clone(),
+            ctx.data().0.lock().unwrap().add_user_to_role(
+                ctx.guild_id().unwrap(),
+                role.clone().id,
+                u.id,
+            ),
+        )
+    });
+
+    if choices.any(|(_, r)| r.is_err()) {
+        let message = MessageBuilder::new()
+            .push("Failed to add someone to role ")
+            .role(role.clone())
+            .push_line("!")
+            .push_italic("Are they already in the role?")
+            .build();
+        ctx.send(|f| f.embed(unsuccessful_interaction(|f| f.description(message))))
+            .await?;
+    }
+
+    let added_users = choices.map(|(u, _)| u);
+
+    let mut message = MessageBuilder::new();
+
+    message.push("Added ");
+
+    for u in added_users {
+        message.user(u);
+    }
+
+    let message = message
+        .push(" to role ")
+        .role(role.clone())
+        .push("!")
+        .build();
+
+    let m = ctx
+        .send(|f| {
+            f.embed(successful_interaction(|f| f.description(message.clone())))
+                .components(|f| {
+                    f.create_action_row(|f| {
+                        f.create_button(|f| {
+                            f.custom_id(role.id)
+                                .emoji(ReactionType::from('🔔'))
+                                .style(ButtonStyle::Primary)
+                                .label("Join this role!")
+                        })
+                    })
+                })
+        })
+        .await?;
+
+    info!(
+        "({}) {} joined {}!",
+        role.guild_id,
+        ctx.author().id,
+        role.id
+    );
+
+    save_to_db(ctx.data());
+
+    // wait 30 minutes
+    tokio::spawn(tokio::time::sleep(Duration::from_secs(60 * 30))).await?;
+
+    // turn off the button
+    'timeout: {
+        let m = match m {
+            Some(m) => m,
+            _ => break 'timeout,
+        };
+        let mut m = match m.message().await {
+            Ok(m) => m,
+            _ => break 'timeout,
+        };
+
+        m.edit(ctx.discord(), |f| {
+            f.embed(successful_interaction(|f| {
+                f.description(message.clone())
+                    .footer(|f| f.text("Button timed out! Do a new command."))
+            }))
+            .components(|f| {
+                f.create_action_row(|f| {
+                    f.create_button(|f| {
+                        f.custom_id(role.id)
+                            .emoji(ReactionType::from('🔔'))
+                            .style(ButtonStyle::Primary)
+                            .label("Join this role!")
+                            .disabled(true)
+                    })
+                })
+            })
+        })
+        .await?;
+    }
     Ok(())
 }

@@ -4,10 +4,11 @@ use chrono::Utc;
 use log::{error, info};
 use poise::serenity_prelude::{
     Activity, Context as SerenityContext, GuildId, Interaction,
-    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType, Message, Ready, Role,
-    RoleId, User, UserId,
+    InteractionApplicationCommandCallbackDataFlags, InteractionResponseType, Mentionable, Message,
+    Ready, Role, RoleId, User, UserId,
 };
 
+use crate::util::save_to_db;
 use crate::{Data, Error};
 
 pub async fn on_error(error: poise::FrameworkError<'_, Data, Error>) {
@@ -48,7 +49,7 @@ pub async fn event_listener(
     Ok(())
 }
 
-pub async fn on_interaction_create(
+pub async fn interaction_leave_role(
     ctx: &SerenityContext,
     user_data: &Data,
     interaction: &Interaction,
@@ -57,25 +58,29 @@ pub async fn on_interaction_create(
         Some(m) => m,
         None => return Ok(()),
     };
+
     let guild_id = match m.guild_id {
         Some(id) => id,
         _ => return Ok(()),
     };
-    let role_id = u64::from_str(m.data.custom_id.as_str()).expect("Custom id was not u64.");
+
+    let role_id = u64::from_str(&m.data.custom_id[1..])?;
 
     let response =
         match user_data
             .0
             .lock()
             .unwrap()
-            .add_user_to_role(guild_id.0, role_id, m.user.id.0)
+            .remove_user_from_role(guild_id.0, role_id, m.user.id.0)
         {
             Ok(_) => {
-                info!("({}) {} joined {}!", guild_id, m.user.id, role_id);
-                "✅ Added you to the role!"
+                info!("({}) {} left {}!", guild_id, m.user.id, role_id);
+                "✅ Removed you from the role!"
             }
-            Err(_) => "❌ Failed to add you to the role. *Are you already in it?*",
+            Err(_) => "❌ Failed to remove you to the role. *Did you already leave?*",
         };
+
+    save_to_db(user_data);
 
     m.create_interaction_response(ctx, |f| {
         f.kind(InteractionResponseType::ChannelMessageWithSource)
@@ -86,6 +91,72 @@ pub async fn on_interaction_create(
     })
     .await?;
     Ok(())
+}
+
+pub async fn interaction_join_role(
+    ctx: &SerenityContext,
+    user_data: &Data,
+    interaction: &Interaction,
+) -> Result<(), poise::serenity_prelude::SerenityError> {
+    let m = match interaction.clone().message_component() {
+        Some(m) => m,
+        None => return Ok(()),
+    };
+
+    let guild_id = match m.guild_id {
+        Some(id) => id,
+        _ => return Ok(()),
+    };
+
+    let role_id = u64::from_str(m.data.custom_id.as_str()).expect("Custom id was not u64.");
+
+    let mut added = false;
+    let response =
+        match user_data
+            .0
+            .lock()
+            .unwrap()
+            .add_user_to_role(guild_id.0, role_id, m.user.id.0)
+        {
+            Ok(_) => {
+                info!("({}) {} joined {}!", guild_id, m.user.id, role_id);
+                added = true;
+                format!("✅ Added {} to the role!", m.user.mention())
+            }
+            Err(_) => "❌ Failed to add you to the role. *Are you already in it?*".to_string(),
+        };
+
+    save_to_db(user_data);
+
+    m.create_interaction_response(ctx, |f| {
+        f.kind(InteractionResponseType::ChannelMessageWithSource)
+            .interaction_response_data(|f| {
+                f.content(response);
+                if !added {
+                    f.flags(InteractionApplicationCommandCallbackDataFlags::EPHEMERAL);
+                }
+                f
+            })
+    })
+    .await?;
+    Ok(())
+}
+
+pub async fn on_interaction_create(
+    ctx: &SerenityContext,
+    user_data: &Data,
+    interaction: &Interaction,
+) -> Result<(), poise::serenity_prelude::SerenityError> {
+    let m = match interaction.clone().message_component() {
+        Some(m) => m,
+        None => return Ok(()),
+    };
+
+    match m.data.custom_id.as_str().get(..1) {
+        Some(":") => interaction_leave_role(ctx, user_data, interaction).await,
+        Some(_) => interaction_join_role(ctx, user_data, interaction).await,
+        _ => Ok(()),
+    }
 }
 
 pub async fn on_message(
